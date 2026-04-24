@@ -4,6 +4,10 @@
 
 pnpm workspace monorepo using TypeScript. Each package manages its own dependencies.
 
+## Artifacts
+
+- **gdscript-quest** (web, root `/`) — Mobile-first, gamified GDScript (Godot Engine) learning app. Mimo-style learning path with 5 chapters, interactive slide deck (info, code, multiple choice, fill-in-the-blank, drag-and-drop, code practice), XP/coins counters, syntax-highlighted GDScript code blocks, localStorage progress persistence, and a UPI Support Me button. Frontend-only (no backend, no API). Curriculum lives in `src/data/curriculum.ts`. Game state hook: `src/hooks/useGameState.ts`.
+
 ## Stack
 
 - **Monorepo tool**: pnpm workspaces

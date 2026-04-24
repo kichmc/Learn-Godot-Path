@@ -1,0 +1,62 @@
+uploads = []
+outputs = []
+
+[[generated]]
+id = "ii7wZI-AZ8Tug1J1pxMjC"
+uri = "file://artifacts/gdscript-quest/public/images/ch1-cover.png"
+type = "image"
+title = "Chapter 1 Cover Variables"
+
+[[generated]]
+id = "BCmGKeaE-UNbX4B3gcaIF"
+uri = "file://artifacts/gdscript-quest/public/images/ch2-cover.png"
+type = "image"
+title = "Chapter 2 Cover Functions"
+
+[[generated]]
+id = "34CKxFN8uJZcuabeEu8m2"
+uri = "file://artifacts/gdscript-quest/public/images/ch3-cover.png"
+type = "image"
+title = "Chapter 3 Cover Logic"
+
+[[generated]]
+id = "OtQbl-rEk-RwV3OAOprNa"
+uri = "file://artifacts/gdscript-quest/public/images/ch4-cover.png"
+type = "image"
+title = "Chapter 4 Cover Signals"
+
+[[generated]]
+id = "h3KFG7srnlK6v2moLWppM"
+uri = "file://artifacts/gdscript-quest/public/images/ch5-cover.png"
+type = "image"
+title = "Chapter 5 Cover Nodes"
+
+[[generated]]
+id = "7GaZ7h8siLUPqw3EqF9zn"
+uri = "file://artifacts/gdscript-quest/public/images/data-types.png"
+type = "image"
+title = "Data types illustration"
+
+[[generated]]
+id = "Xr3g3w5w8675uPHbNJy7M"
+uri = "file://artifacts/gdscript-quest/public/images/ready-process.png"
+type = "image"
+title = "Ready and Process timeline"
+
+[[generated]]
+id = "S7Q1Lsq7wT1McRv6hQmSd"
+uri = "file://artifacts/gdscript-quest/public/images/health-flow.png"
+type = "image"
+title = "Health if else flowchart"
+
+[[generated]]
+id = "8FmjDqoYzoSwYdMQQSEmV"
+uri = "file://artifacts/gdscript-quest/public/images/mobile-touch.png"
+type = "image"
+title = "Mobile touch input"
+
+[[generated]]
+id = "0vWE3nGdFDG9MK2Edjq_r"
+uri = "file://artifacts/gdscript-quest/public/images/scene-tree.png"
+type = "image"
+title = "Godot Scene Tree"
