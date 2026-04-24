@@ -15,6 +15,7 @@ import { InputStep } from "./steps/InputStep";
 import { VisualStep } from "./steps/VisualStep";
 import { DebugStep } from "./steps/DebugStep";
 import { PredictionStep } from "./steps/PredictionStep";
+import { TestStep } from "./steps/TestStep";
 import { CelebrateBurst } from "./CelebrateBurst";
 import { playDing, playPop, playBuzz } from "@/lib/sound";
 
@@ -37,8 +38,14 @@ function isQuestion(s: Step) {
     s.type === "quiz" ||
     s.type === "input" ||
     s.type === "debug" ||
-    s.type === "prediction"
+    s.type === "prediction" ||
+    s.type === "test"
   );
+}
+
+function rewardFor(stepType: Step["type"]): { xp: number; coins: number } {
+  if (stepType === "test") return { xp: 20, coins: 10 };
+  return { xp: 10, coins: 5 };
 }
 
 export function LessonOverlay({
@@ -88,8 +95,9 @@ export function LessonOverlay({
       setCelebrate(true);
       playDing();
       if (!isStepCompleted(step.id)) {
-        onStepComplete(step.id, { xp: 10, coins: 5 });
-        setEarned((e) => ({ xp: e.xp + 10, coins: e.coins + 5 }));
+        const r = rewardFor(step.type);
+        onStepComplete(step.id, r);
+        setEarned((e) => ({ xp: e.xp + r.xp, coins: e.coins + r.coins }));
       }
       setTimeout(() => setCelebrate(false), 700);
     } else {
@@ -198,6 +206,13 @@ export function LessonOverlay({
               )}
               {step.type === "prediction" && (
                 <PredictionStep
+                  step={step}
+                  answered={answeredCorrect}
+                  onAnswer={onAnswer}
+                />
+              )}
+              {step.type === "test" && (
+                <TestStep
                   step={step}
                   answered={answeredCorrect}
                   onAnswer={onAnswer}

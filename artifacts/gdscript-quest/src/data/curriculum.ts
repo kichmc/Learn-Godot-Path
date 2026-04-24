@@ -7,7 +7,8 @@ export type StepType =
   | "input"
   | "visual"
   | "debug"
-  | "prediction";
+  | "prediction"
+  | "test";
 
 export interface BaseStep {
   id: string;
@@ -89,13 +90,29 @@ export interface VisualStep extends BaseStep {
   simulation: SimulationSpec;
 }
 
+export interface TestStep extends BaseStep {
+  type: "test";
+  question: string;
+  // Code template containing one or more "___" blanks
+  code: string;
+  // Accepted answers, one per blank (case-insensitive, trimmed)
+  answers: string[];
+  // 1-2 line explanation shown after a correct answer
+  explanation: string;
+  // Optional visual result that plays after the user gets it right
+  simulation?: SimulationSpec;
+  difficulty?: "easy" | "medium";
+  hint?: string;
+}
+
 export type Step =
   | TextStep
   | QuizStep
   | InputStep
   | VisualStep
   | DebugStep
-  | PredictionStep;
+  | PredictionStep
+  | TestStep;
 
 export interface Lesson {
   id: string;
@@ -178,6 +195,15 @@ export const curriculum: Chapter[] = [
             correctIndex: 1,
             explanation: "print(lives) shows the value stored in lives.",
           },
+          {
+            id: "b1-test",
+            type: "test",
+            difficulty: "easy",
+            question: "Lesson Test: create a variable named score with value 0.",
+            code: `var score = ___`,
+            answers: ["0"],
+            explanation: "var creates the box, the name labels it, and the number is the starting value.",
+          },
         ],
       },
       {
@@ -222,6 +248,15 @@ export const curriculum: Chapter[] = [
             fix: `func jump():`,
             explanation: "Functions need () before the colon.",
           },
+          {
+            id: "b2-test",
+            type: "test",
+            difficulty: "easy",
+            question: "Lesson Test: write a function called jump.",
+            code: `func ___():\n    velocity.y = -300`,
+            answers: ["jump"],
+            explanation: "func + name + () + : begins any function in GDScript.",
+          },
         ],
       },
       {
@@ -260,6 +295,15 @@ export const curriculum: Chapter[] = [
             options: [`Print("hi")`, `print("hi")`, `PRINT("hi")`],
             correctIndex: 1,
             explanation: "GDScript is case-sensitive. Use lowercase print.",
+          },
+          {
+            id: "b3-test",
+            type: "test",
+            difficulty: "easy",
+            question: 'Lesson Test: print the message "Hello".',
+            code: `print("___")`,
+            answers: ["Hello"],
+            explanation: "Whatever sits inside the quotes is what shows up in the console.",
           },
         ],
       },
@@ -323,6 +367,16 @@ export const curriculum: Chapter[] = [
             answers: ["100"],
             hint: "Positive Y = down in 2D.",
           },
+          {
+            id: "m1-test",
+            type: "test",
+            difficulty: "easy",
+            question: "Lesson Test: complete the code so the player moves right.",
+            code: `velocity.x = ___`,
+            answers: ["200"],
+            explanation: "A positive number on X moves right. Bigger number = faster.",
+            simulation: { kind: "move", direction: "right", caption: "Player moves right" },
+          },
         ],
       },
       {
@@ -363,6 +417,16 @@ export const curriculum: Chapter[] = [
             buggyLineIndex: 1,
             fix: `move_and_slide()`,
             explanation: "Functions need parentheses to actually run.",
+          },
+          {
+            id: "m2-test",
+            type: "test",
+            difficulty: "easy",
+            question: "Lesson Test: complete the call that applies velocity.",
+            code: `move_and_____()`,
+            answers: ["slide"],
+            explanation: "move_and_slide() reads velocity, moves the body, and slides along walls.",
+            simulation: { kind: "move", direction: "right", caption: "Sliding to the right" },
           },
         ],
       },
@@ -408,6 +472,17 @@ export const curriculum: Chapter[] = [
             code: `velocity = Vector2(0, 100)`,
             options: ["Up", "Down", "Left", "Right"],
             correctIndex: 1,
+          },
+          {
+            id: "m3-test",
+            type: "test",
+            difficulty: "medium",
+            question: "Lesson Test: write a velocity that moves the player UP at speed 100.",
+            code: `velocity = Vector2(0, ___)`,
+            answers: ["-100"],
+            explanation: "Up in 2D is the negative Y direction, so use -100.",
+            simulation: { kind: "move", direction: "up", caption: "Player moves up" },
+            hint: "Up = negative Y.",
           },
         ],
       },
@@ -461,6 +536,16 @@ export const curriculum: Chapter[] = [
             options: ["Up", "Right", "Down", "Stays still"],
             correctIndex: 2,
           },
+          {
+            id: "p1-test",
+            type: "test",
+            difficulty: "medium",
+            question: "Lesson Test: complete the gravity line so the player falls.",
+            code: `velocity.y += ___ * delta`,
+            answers: ["gravity"],
+            explanation: "gravity is a number you defined; multiplying by delta keeps it framerate-safe.",
+            simulation: { kind: "gravity", caption: "Pulled by gravity" },
+          },
         ],
       },
       {
@@ -506,6 +591,17 @@ export const curriculum: Chapter[] = [
             fix: `    velocity.y = -300`,
             explanation: "Positive Y goes DOWN. Use a negative value to jump.",
           },
+          {
+            id: "p2-test",
+            type: "test",
+            difficulty: "medium",
+            question: "Lesson Test: make the player jump (push up).",
+            code: `velocity.y = ___`,
+            answers: ["-300"],
+            explanation: "Setting Y to a negative number launches the body upward.",
+            simulation: { kind: "jump", caption: "Jump!" },
+            hint: "Up is negative Y.",
+          },
         ],
       },
       {
@@ -542,6 +638,16 @@ export const curriculum: Chapter[] = [
             prompt: "Complete the floor check.",
             template: `if ___():\n    velocity.y = -300`,
             answers: ["is_on_floor"],
+          },
+          {
+            id: "p3-test",
+            type: "test",
+            difficulty: "medium",
+            question: "Lesson Test: only jump when standing on the floor.",
+            code: `if ___():\n    velocity.y = -300`,
+            answers: ["is_on_floor"],
+            explanation: "is_on_floor() returns true when the body touches the ground.",
+            simulation: { kind: "jump", caption: "Floor check, then jump" },
           },
         ],
       },
@@ -608,6 +714,16 @@ export const curriculum: Chapter[] = [
             options: ["Move left", "Move right", "Jump", "Nothing"],
             correctIndex: 0,
           },
+          {
+            id: "i1-test",
+            type: "test",
+            difficulty: "medium",
+            question: "Lesson Test: check the right-arrow action.",
+            code: `if Input.is_action_pressed("___"):\n    velocity.x = 200`,
+            answers: ["ui_right"],
+            explanation: "ui_right is Godot's default action name for the right arrow key.",
+            simulation: { kind: "input", fromKey: "→", direction: "right", caption: "Right arrow → move right" },
+          },
         ],
       },
       {
@@ -648,6 +764,16 @@ export const curriculum: Chapter[] = [
             template: `Input.is_action____pressed("tap")`,
             answers: ["_just_"],
             hint: "Pattern: is_action_just_pressed",
+          },
+          {
+            id: "i2-test",
+            type: "test",
+            difficulty: "medium",
+            question: "Lesson Test: detect a single tap action named tap.",
+            code: `if Input.is_action_just_pressed("___"):\n    jump()`,
+            answers: ["tap"],
+            explanation: "is_action_just_pressed fires only on the frame the tap starts.",
+            simulation: { kind: "input", fromKey: "TAP", direction: "up", caption: "Tap → jump" },
           },
         ],
       },
@@ -690,6 +816,16 @@ export const curriculum: Chapter[] = [
             question: "Signals are most like…",
             options: ["Variables", "Messages", "Loops", "Files"],
             correctIndex: 1,
+          },
+          {
+            id: "s1-test",
+            type: "test",
+            difficulty: "medium",
+            question: "Lesson Test: declare a custom signal called player_died.",
+            code: `___ player_died`,
+            answers: ["signal"],
+            explanation: "The signal keyword defines a new event other nodes can listen for.",
+            simulation: { kind: "signal", caption: "Signal travels from node to node" },
           },
         ],
       },
@@ -738,6 +874,16 @@ export const curriculum: Chapter[] = [
             ],
             correctIndex: 0,
           },
+          {
+            id: "s2-test",
+            type: "test",
+            difficulty: "medium",
+            question: "Lesson Test: connect the pressed signal to on_pressed.",
+            code: `button.pressed.___(on_pressed)`,
+            answers: ["connect"],
+            explanation: ".connect() wires the signal to the function that runs when it fires.",
+            simulation: { kind: "signal", caption: "Press → handler runs" },
+          },
         ],
       },
       {
@@ -772,6 +918,16 @@ export const curriculum: Chapter[] = [
               "Nothing",
             ],
             correctIndex: 0,
+          },
+          {
+            id: "s3-test",
+            type: "test",
+            difficulty: "medium",
+            question: "Lesson Test: print clicked! when the button fires.",
+            code: `func _on_button_pressed():\n    ___("clicked!")`,
+            answers: ["print"],
+            explanation: "Inside the handler, call print() to log a message every time the button is pressed.",
+            simulation: { kind: "signal", caption: "Press → run handler" },
           },
         ],
       },
@@ -827,6 +983,16 @@ export const curriculum: Chapter[] = [
             options: ["5", "7", "2", "score"],
             correctIndex: 1,
           },
+          {
+            id: "g1-test",
+            type: "test",
+            difficulty: "medium",
+            question: "Lesson Test: add 1 to the score.",
+            code: `score ___ 1`,
+            answers: ["+="],
+            explanation: "+= is shorthand for score = score + 1.",
+            simulation: { kind: "score", fromValue: 0, toValue: 5, caption: "Score: 0 → 5" },
+          },
         ],
       },
       {
@@ -863,6 +1029,16 @@ export const curriculum: Chapter[] = [
             ],
             correctIndex: 1,
             explanation: "Normalized vectors have length 1, so speed stays steady.",
+          },
+          {
+            id: "g2-test",
+            type: "test",
+            difficulty: "medium",
+            question: "Lesson Test: turn the chase direction into a unit vector.",
+            code: `var dir = (player.position - position).___()`,
+            answers: ["normalized"],
+            explanation: ".normalized() shortens any vector to length 1 so speed stays consistent.",
+            simulation: { kind: "chase", caption: "Enemy hunts the player" },
           },
         ],
       },
@@ -907,6 +1083,16 @@ export const curriculum: Chapter[] = [
             template: `if body.is_in_group(___):`,
             answers: [`"enemy"`],
             hint: "Use double quotes around the group name.",
+          },
+          {
+            id: "g3-test",
+            type: "test",
+            difficulty: "medium",
+            question: "Lesson Test: detect a touch with the enemy group.",
+            code: `func _on_body_entered(body):\n    if body.is_in_group("___"):\n        die()`,
+            answers: ["enemy"],
+            explanation: "Groups let you tag many nodes (all enemies) and check them with one call.",
+            simulation: { kind: "collision", caption: "Player + enemy collide" },
           },
         ],
       },
