@@ -126,9 +126,9 @@ export function ChapterNode({
         <div className="text-xs text-muted-foreground mt-0.5">
           {chapter.description}
         </div>
-        {unlocked && !completed && progress.done > 0 && (
+        {unlocked && !completed && (
           <div className="text-[11px] text-primary mt-1 font-semibold">
-            {progress.done}/{progress.total} steps
+            {progress.done}/{progress.total} lessons
           </div>
         )}
         {completed && (

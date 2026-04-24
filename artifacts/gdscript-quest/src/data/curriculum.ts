@@ -1,480 +1,939 @@
-export type SlideType = 
-  | 'info' 
-  | 'code' 
-  | 'multiple_choice' 
-  | 'fill_in_blank' 
-  | 'drag_drop' 
-  | 'code_practice';
+// Curriculum: Chapters → Lessons → Steps
+// Beginner-friendly, mobile-first, very short explanations.
 
-export interface BaseSlide {
+export type StepType =
+  | "text"
+  | "quiz"
+  | "input"
+  | "visual"
+  | "debug"
+  | "prediction";
+
+export interface BaseStep {
   id: string;
-  type: SlideType;
+  type: StepType;
 }
 
-export interface InfoSlide extends BaseSlide {
-  type: 'info';
-  title: string;
-  body: string;
-  image_caption?: string;
-  image_url?: string;
+export interface TextStep extends BaseStep {
+  type: "text";
+  title?: string;
+  body: string; // 2-3 lines max
+  code?: string; // optional GDScript snippet
 }
 
-export interface CodeSlide extends BaseSlide {
-  type: 'code';
-  code: string;
-  explanation: string;
-}
-
-export interface MultipleChoiceSlide extends BaseSlide {
-  type: 'multiple_choice';
+export interface QuizStep extends BaseStep {
+  type: "quiz";
   question: string;
-  code_snippet?: string;
   options: string[];
-  correct_option_index: number;
-  hint: string;
+  correctIndex: number;
+  explanation?: string;
 }
 
-export interface FillInBlankSlide extends BaseSlide {
-  type: 'fill_in_blank';
-  code_snippet_before: string;
-  code_snippet_after: string;
-  answer: string;
-  hint: string;
-  accept_any_number?: boolean;
-}
-
-export interface DragDropSlide extends BaseSlide {
-  type: 'drag_drop';
-  tokens: string[];
-  correct_order: string[];
-}
-
-export interface CodePracticeSlide extends BaseSlide {
-  type: 'code_practice';
+export interface InputStep extends BaseStep {
+  type: "input";
   prompt: string;
-  target_line: string;
-  hint: string;
+  // Code template with one or more "___" placeholders
+  template: string;
+  // The accepted answers, one per blank, lowercased trim-compared
+  answers: string[];
+  hint?: string;
+  explanation?: string;
 }
 
-export type Slide = InfoSlide | CodeSlide | MultipleChoiceSlide | FillInBlankSlide | DragDropSlide | CodePracticeSlide;
+export interface DebugStep extends BaseStep {
+  type: "debug";
+  prompt: string;
+  // Each line is presented as a tappable row; the user must pick the buggy line
+  lines: string[];
+  buggyLineIndex: number;
+  fix: string; // the corrected line shown after success
+  explanation?: string;
+}
+
+export interface PredictionStep extends BaseStep {
+  type: "prediction";
+  prompt: string;
+  code: string;
+  options: string[];
+  correctIndex: number;
+  explanation?: string;
+}
+
+// --- Visual simulation step ---
+
+export type SimulationKind =
+  | "move"
+  | "jump"
+  | "gravity"
+  | "signal"
+  | "input"
+  | "collision"
+  | "score"
+  | "chase";
+
+export interface SimulationSpec {
+  kind: SimulationKind;
+  // Generic params; consumed by VisualSimulation
+  direction?: "left" | "right" | "up" | "down";
+  fromKey?: string; // input simulation
+  fromValue?: number; // score
+  toValue?: number; // score
+  caption?: string;
+}
+
+export interface VisualStep extends BaseStep {
+  type: "visual";
+  title: string;
+  description: string; // short
+  code?: string;
+  simulation: SimulationSpec;
+}
+
+export type Step =
+  | TextStep
+  | QuizStep
+  | InputStep
+  | VisualStep
+  | DebugStep
+  | PredictionStep;
+
+export interface Lesson {
+  id: string;
+  title: string;
+  subtitle: string;
+  steps: Step[];
+}
 
 export interface Chapter {
   id: string;
   title: string;
   description: string;
-  goal: string;
-  cover_image: string;
-  slides: Slide[];
+  accent: string; // tailwind class for color flavor (kept for compatibility)
+  lessons: Lesson[];
 }
 
+// =====================================================================
+// CONTENT
+// =====================================================================
+
 export const curriculum: Chapter[] = [
+  // -------------------------------------------------------------------
+  // CHAPTER 1: BASICS
+  // -------------------------------------------------------------------
   {
-    id: "chapter-1",
-    title: "Variables & Data Types",
-    description: "The Player's Stats",
-    goal: "understand var, int, float, String, bool. Why? Because every game needs to remember things — health, score, the player's name.",
-    cover_image: "/images/ch1-cover.png",
-    slides: [
+    id: "basics",
+    title: "Basics",
+    description: "Variables, functions, and print()",
+    accent: "from-primary to-accent",
+    lessons: [
       {
-        id: "c1-s1",
-        type: "info",
-        title: "What is a variable?",
-        body: "Think of a variable as a labeled box where your game stores information. The player's health, the score, even their name — all of these live inside variables."
+        id: "basics-variables",
+        title: "Variables",
+        subtitle: "Boxes that hold values",
+        steps: [
+          {
+            id: "b1-1",
+            type: "text",
+            title: "What is a variable?",
+            body: "A variable is a labeled box that stores a value you can use later.",
+          },
+          {
+            id: "b1-2",
+            type: "text",
+            title: "How to make one",
+            body: "Use the keyword var, a name, and a value.",
+            code: `var score = 0`,
+          },
+          {
+            id: "b1-3",
+            type: "quiz",
+            question: "Which line creates a variable?",
+            options: [`print("hi")`, `var lives = 3`, `func jump():`],
+            correctIndex: 1,
+            explanation: "var starts a variable. The name is lives, value is 3.",
+          },
+          {
+            id: "b1-4",
+            type: "input",
+            prompt: "Make a variable named coins set to 100.",
+            template: `var ___ = 100`,
+            answers: ["coins"],
+            hint: "Type the variable name.",
+          },
+          {
+            id: "b1-5",
+            type: "debug",
+            prompt: "One line is broken. Tap it.",
+            lines: [`var name = "Adwaith"`, `var = 5`, `var hp = 10`],
+            buggyLineIndex: 1,
+            fix: `var x = 5`,
+            explanation: "A variable needs a name between var and =.",
+          },
+          {
+            id: "b1-6",
+            type: "prediction",
+            prompt: "What gets printed?",
+            code: `var lives = 3\nprint(lives)`,
+            options: ["lives", "3", "0", "nothing"],
+            correctIndex: 1,
+            explanation: "print(lives) shows the value stored in lives.",
+          },
+        ],
       },
       {
-        id: "c1-s2",
-        type: "code",
-        code: "var health = 100",
-        explanation: "We just made a box called 'health' and put the number 100 inside it."
+        id: "basics-functions",
+        title: "Functions",
+        subtitle: "Reusable blocks of code",
+        steps: [
+          {
+            id: "b2-1",
+            type: "text",
+            title: "What is a function?",
+            body: "A function is a recipe you can run again and again.",
+          },
+          {
+            id: "b2-2",
+            type: "text",
+            title: "Make one with func",
+            body: "Use func, a name, parentheses, then a colon.",
+            code: `func say_hi():\n    print("Hi!")`,
+          },
+          {
+            id: "b2-3",
+            type: "quiz",
+            question: "Which keyword starts a function?",
+            options: ["var", "func", "def", "fn"],
+            correctIndex: 1,
+            explanation: "GDScript uses func.",
+          },
+          {
+            id: "b2-4",
+            type: "input",
+            prompt: "Start a function called jump.",
+            template: `___ jump():`,
+            answers: ["func"],
+          },
+          {
+            id: "b2-5",
+            type: "debug",
+            prompt: "Find the broken line.",
+            lines: [`func start():`, `func jump:`, `func end():`],
+            buggyLineIndex: 1,
+            fix: `func jump():`,
+            explanation: "Functions need () before the colon.",
+          },
+        ],
       },
       {
-        id: "c1-s3",
-        type: "info",
-        title: "Data types",
-        body: "Different boxes for different kinds of information.",
-        image_caption: "[Illustration: four boxes labeled int, float, String, bool with example values]",
-        image_url: "/images/data-types.png"
+        id: "basics-print",
+        title: "print()",
+        subtitle: "Show messages on screen",
+        steps: [
+          {
+            id: "b3-1",
+            type: "text",
+            title: "What does print do?",
+            body: "print() shows a message in the console. Great for testing.",
+            code: `print("Hello, Godot!")`,
+          },
+          {
+            id: "b3-2",
+            type: "prediction",
+            prompt: "What is the output?",
+            code: `print(2 + 3)`,
+            options: ["2 + 3", "5", "23", "error"],
+            correctIndex: 1,
+            explanation: "GDScript adds first, then prints 5.",
+          },
+          {
+            id: "b3-3",
+            type: "input",
+            prompt: 'Print the message "Game start".',
+            template: `print(___)`,
+            answers: [`"game start"`],
+            hint: 'Use double quotes around the text.',
+          },
+          {
+            id: "b3-4",
+            type: "quiz",
+            question: "Which is correct?",
+            options: [`Print("hi")`, `print("hi")`, `PRINT("hi")`],
+            correctIndex: 1,
+            explanation: "GDScript is case-sensitive. Use lowercase print.",
+          },
+        ],
       },
-      {
-        id: "c1-s4",
-        type: "code",
-        code: "var player_name = \"Hero\"\nvar speed = 5.5\nvar is_alive = true",
-        explanation: "Strings are text, floats have decimals, bools are true/false."
-      },
-      {
-        id: "c1-s5",
-        type: "multiple_choice",
-        question: "Which line correctly stores the player's max health?",
-        options: ["var max_health = 100", "max_health == 100", "var = max_health 100", "100 = var max_health"],
-        correct_option_index: 0,
-        hint: "In GDScript, we declare with the keyword var, then the name, then = and the value."
-      },
-      {
-        id: "c1-s6",
-        type: "fill_in_blank",
-        code_snippet_before: "var coins = ",
-        code_snippet_after: "",
-        answer: "50",
-        accept_any_number: true,
-        hint: "Just type any whole number."
-      },
-      {
-        id: "c1-s7",
-        type: "info",
-        title: "Why types matter",
-        body: "If we try to add a number to a word, the game will get confused. Types help Godot know what's safe to do."
-      },
-      {
-        id: "c1-s8",
-        type: "drag_drop",
-        tokens: ["var", "enemy_count", "=", "3"],
-        correct_order: ["var", "enemy_count", "=", "3"]
-      },
-      {
-        id: "c1-s9",
-        type: "multiple_choice",
-        question: "Which type would you use for the player's name?",
-        options: ["int", "float", "String", "bool"],
-        correct_option_index: 2,
-        hint: "Names are text — and text is a String."
-      },
-      {
-        id: "c1-s10",
-        type: "code_practice",
-        prompt: "Type the line that creates a variable called health with value 100.",
-        target_line: "var health = 100",
-        hint: "Start with 'var', then the name, then = and the value."
-      }
-    ]
+    ],
   },
+
+  // -------------------------------------------------------------------
+  // CHAPTER 2: MOVEMENT
+  // -------------------------------------------------------------------
   {
-    id: "chapter-2",
-    title: "Functions & Methods",
-    description: "Making things happen",
-    goal: "understand func, parameters, return, and Godot's _ready() and _process(delta) lifecycle hooks.",
-    cover_image: "/images/ch2-cover.png",
-    slides: [
+    id: "movement",
+    title: "Movement",
+    description: "Velocity, slide, and direction",
+    accent: "from-accent to-primary",
+    lessons: [
       {
-        id: "c2-s1",
-        type: "info",
-        title: "What is a function?",
-        body: "A function is a recipe — a set of instructions you can run any time by calling its name."
+        id: "movement-velocity",
+        title: "Velocity",
+        subtitle: "How fast and where",
+        steps: [
+          {
+            id: "m1-1",
+            type: "text",
+            title: "Velocity is a Vector2",
+            body: "It tells the player two things: speed on X and speed on Y.",
+            code: `velocity = Vector2(100, 0)`,
+          },
+          {
+            id: "m1-2",
+            type: "visual",
+            title: "Watch it move",
+            description: "Vector2(100, 0) moves the player to the right.",
+            code: `velocity = Vector2(100, 0)`,
+            simulation: {
+              kind: "move",
+              direction: "right",
+              caption: "Player moves right",
+            },
+          },
+          {
+            id: "m1-3",
+            type: "quiz",
+            question: "Vector2(100, 0) moves the player which way?",
+            options: ["Up", "Right", "Down", "Left"],
+            correctIndex: 1,
+          },
+          {
+            id: "m1-4",
+            type: "prediction",
+            prompt: "Where does this player go?",
+            code: `velocity = Vector2(-100, 0)`,
+            options: ["Right", "Left", "Up", "Down"],
+            correctIndex: 1,
+            explanation: "Negative X means moving left.",
+          },
+          {
+            id: "m1-5",
+            type: "input",
+            prompt: "Make the player move down at speed 100.",
+            template: `velocity = Vector2(0, ___)`,
+            answers: ["100"],
+            hint: "Positive Y = down in 2D.",
+          },
+        ],
       },
       {
-        id: "c2-s2",
-        type: "code",
-        code: "func say_hello():\n    print(\"Hello, world!\")",
-        explanation: "We just made a function called say_hello. The print() line is what runs when we call it."
+        id: "movement-slide",
+        title: "move_and_slide()",
+        subtitle: "Apply the velocity",
+        steps: [
+          {
+            id: "m2-1",
+            type: "text",
+            title: "What it does",
+            body: "Call this every frame. It moves the player and slides along walls.",
+            code: `func _physics_process(delta):\n    move_and_slide()`,
+          },
+          {
+            id: "m2-2",
+            type: "visual",
+            title: "Slide in action",
+            description: "The body uses velocity and slides along the floor.",
+            simulation: {
+              kind: "move",
+              direction: "right",
+              caption: "Sliding to the right",
+            },
+          },
+          {
+            id: "m2-3",
+            type: "input",
+            prompt: "Complete the call.",
+            template: `move_and_____()`,
+            answers: ["slide"],
+          },
+          {
+            id: "m2-4",
+            type: "debug",
+            prompt: "Which line is wrong?",
+            lines: [`velocity.x = 100`, `move_and_slide`, `pass`],
+            buggyLineIndex: 1,
+            fix: `move_and_slide()`,
+            explanation: "Functions need parentheses to actually run.",
+          },
+        ],
       },
       {
-        id: "c2-s3",
-        type: "info",
-        title: "_ready() runs once",
-        body: "Godot calls _ready() automatically when the node enters the scene.",
-        image_caption: "[Diagram: timeline showing _ready() firing once at scene start, then _process() running every frame]",
-        image_url: "/images/ready-process.png"
+        id: "movement-direction",
+        title: "Direction",
+        subtitle: "Read the axes",
+        steps: [
+          {
+            id: "m3-1",
+            type: "text",
+            title: "X and Y in 2D",
+            body: "Positive X is right. Negative X is left. Positive Y is DOWN.",
+          },
+          {
+            id: "m3-2",
+            type: "visual",
+            title: "Up means negative Y",
+            description: "In Godot 2D, up is negative on the Y axis.",
+            code: `velocity = Vector2(0, -100)`,
+            simulation: {
+              kind: "move",
+              direction: "up",
+              caption: "Player moves up",
+            },
+          },
+          {
+            id: "m3-3",
+            type: "quiz",
+            question: "Which Vector2 moves a player UP?",
+            options: [
+              "Vector2(0, 100)",
+              "Vector2(0, -100)",
+              "Vector2(100, 0)",
+              "Vector2(-100, 0)",
+            ],
+            correctIndex: 1,
+          },
+          {
+            id: "m3-4",
+            type: "prediction",
+            prompt: "Where does this go?",
+            code: `velocity = Vector2(0, 100)`,
+            options: ["Up", "Down", "Left", "Right"],
+            correctIndex: 1,
+          },
+        ],
       },
-      {
-        id: "c2-s4",
-        type: "code",
-        code: "func _ready():\n    print(\"Game starting!\")",
-        explanation: "Godot calls _ready() automatically when the node enters the scene."
-      },
-      {
-        id: "c2-s5",
-        type: "info",
-        title: "_process(delta) runs every frame",
-        body: "delta is the seconds between frames. Multiply movement by delta so it works the same on slow and fast devices."
-      },
-      {
-        id: "c2-s6",
-        type: "code",
-        code: "func _process(delta):\n    position.x += 100 * delta",
-        explanation: "Move 100 pixels per second to the right, smoothly."
-      },
-      {
-        id: "c2-s7",
-        type: "multiple_choice",
-        question: "Which function runs once when a node first appears?",
-        options: ["_process()", "_ready()", "_input()", "_enter()"],
-        correct_option_index: 1,
-        hint: "Ready as in 'I'm ready to start!'"
-      },
-      {
-        id: "c2-s8",
-        type: "fill_in_blank",
-        code_snippet_before: "func _ready",
-        code_snippet_after: ":\n    print(\"Hi\")",
-        answer: "()",
-        hint: "Functions need parentheses for their parameters, even when empty."
-      },
-      {
-        id: "c2-s9",
-        type: "multiple_choice",
-        question: "Why do we multiply movement by delta?",
-        options: ["It looks cool", "So movement is consistent across frame rates", "Godot requires it", "To save memory"],
-        correct_option_index: 1,
-        hint: "Frame rates differ across devices."
-      },
-      {
-        id: "c2-s10",
-        type: "code_practice",
-        prompt: "Type the start of Godot's ready function.",
-        target_line: "func _ready():",
-        hint: "func name(): — and the name is _ready"
-      }
-    ]
+    ],
   },
+
+  // -------------------------------------------------------------------
+  // CHAPTER 3: PHYSICS
+  // -------------------------------------------------------------------
   {
-    id: "chapter-3",
-    title: "If/Else Logic",
-    description: "Decision making in-game",
-    goal: "if, elif, else, comparison and logical operators. Build instincts for game logic like 'if health <= 0: die'.",
-    cover_image: "/images/ch3-cover.png",
-    slides: [
+    id: "physics",
+    title: "Physics",
+    description: "Gravity, jump, is_on_floor()",
+    accent: "from-primary to-warning",
+    lessons: [
       {
-        id: "c3-s1",
-        type: "info",
-        title: "Why decisions?",
-        body: "Games are full of choices: did the player win? are they hurt? is the door locked? if/else lets your game react."
+        id: "physics-gravity",
+        title: "Gravity",
+        subtitle: "What goes up...",
+        steps: [
+          {
+            id: "p1-1",
+            type: "text",
+            title: "Gravity pulls down",
+            body: "Add gravity to velocity.y every frame so the player falls.",
+            code: `velocity.y += gravity * delta`,
+          },
+          {
+            id: "p1-2",
+            type: "visual",
+            title: "Falling object",
+            description: "Without a floor, gravity makes the body fall.",
+            simulation: {
+              kind: "gravity",
+              caption: "Pulled by gravity",
+            },
+          },
+          {
+            id: "p1-3",
+            type: "quiz",
+            question: "Gravity affects which axis?",
+            options: ["X", "Y", "Z", "Both"],
+            correctIndex: 1,
+            explanation: "In 2D, gravity changes Y.",
+          },
+          {
+            id: "p1-4",
+            type: "prediction",
+            prompt: "With gravity on, where does the player go?",
+            code: `velocity.y += gravity * delta`,
+            options: ["Up", "Right", "Down", "Stays still"],
+            correctIndex: 2,
+          },
+        ],
       },
       {
-        id: "c3-s2",
-        type: "code",
-        code: "if health <= 0:\n    print(\"Game Over\")",
-        explanation: "If health drops to zero or below, we end the game."
+        id: "physics-jump",
+        title: "Jump",
+        subtitle: "Push up to jump",
+        steps: [
+          {
+            id: "p2-1",
+            type: "text",
+            title: "Set Y to negative",
+            body: "Up is negative Y. Set velocity.y to a negative number to jump.",
+            code: `velocity.y = -300`,
+          },
+          {
+            id: "p2-2",
+            type: "visual",
+            title: "Jumping",
+            description: "A negative Y velocity launches the player upward.",
+            simulation: {
+              kind: "jump",
+              caption: "Jump!",
+            },
+          },
+          {
+            id: "p2-3",
+            type: "input",
+            prompt: "Make the player jump (push up).",
+            template: `velocity.y = ___300`,
+            answers: ["-"],
+            hint: "Up is negative.",
+          },
+          {
+            id: "p2-4",
+            type: "debug",
+            prompt: "This jump is wrong. Which line?",
+            lines: [
+              `func jump():`,
+              `    velocity.y = 300`,
+              `    move_and_slide()`,
+            ],
+            buggyLineIndex: 1,
+            fix: `    velocity.y = -300`,
+            explanation: "Positive Y goes DOWN. Use a negative value to jump.",
+          },
+        ],
       },
       {
-        id: "c3-s3",
-        type: "info",
-        title: "elif and else",
-        body: "Handle multiple conditions in order.",
-        image_caption: "[Flowchart: health > 50 (Healthy) -> elif > 0 (Hurt) -> else (Dead)]",
-        image_url: "/images/health-flow.png"
+        id: "physics-floor",
+        title: "is_on_floor()",
+        subtitle: "Only jump when grounded",
+        steps: [
+          {
+            id: "p3-1",
+            type: "text",
+            title: "Check the ground",
+            body: "is_on_floor() returns true when the body touches the floor.",
+            code: `if is_on_floor():\n    velocity.y = -300`,
+          },
+          {
+            id: "p3-2",
+            type: "quiz",
+            question: "When can the player jump?",
+            options: ["Anytime", "Only on the floor", "Only in the air"],
+            correctIndex: 1,
+            explanation: "Checking is_on_floor() prevents mid-air jumps.",
+          },
+          {
+            id: "p3-3",
+            type: "visual",
+            title: "Grounded jump",
+            description: "Player only jumps when standing on the floor.",
+            code: `if is_on_floor():\n    velocity.y = -300`,
+            simulation: { kind: "jump", caption: "Floor check, then jump" },
+          },
+          {
+            id: "p3-4",
+            type: "input",
+            prompt: "Complete the floor check.",
+            template: `if ___():\n    velocity.y = -300`,
+            answers: ["is_on_floor"],
+          },
+        ],
       },
-      {
-        id: "c3-s4",
-        type: "code",
-        code: "if health > 50:\n    print(\"Healthy\")\nelif health > 0:\n    print(\"Hurt\")\nelse:\n    print(\"Dead\")",
-        explanation: "Check each condition from top to bottom until one is true."
-      },
-      {
-        id: "c3-s5",
-        type: "info",
-        title: "Comparison operators",
-        body: "==, !=, >, <, >=, <= — note that == is for comparing, = is for assigning."
-      },
-      {
-        id: "c3-s6",
-        type: "multiple_choice",
-        question: "Which operator checks if two things are equal?",
-        options: ["=", "==", "!=", "=>"],
-        correct_option_index: 1,
-        hint: "Single = assigns; double == compares."
-      },
-      {
-        id: "c3-s7",
-        type: "fill_in_blank",
-        code_snippet_before: "if score ",
-        code_snippet_after: " 100:\n    print(\"You win!\")",
-        answer: ">=",
-        hint: "Greater than or equal to."
-      },
-      {
-        id: "c3-s8",
-        type: "code",
-        code: "if has_key and door_locked:\n    print(\"Open the door\")",
-        explanation: "Both conditions must be true with 'and'."
-      },
-      {
-        id: "c3-s9",
-        type: "multiple_choice",
-        question: "What does 'or' do?",
-        options: ["Both must be true", "Either can be true", "Neither is true", "Inverts a value"],
-        correct_option_index: 1,
-        hint: "or = at least one."
-      },
-      {
-        id: "c3-s10",
-        type: "drag_drop",
-        tokens: ["if", "health", "<=", "0", ":"],
-        correct_order: ["if", "health", "<=", "0", ":"]
-      },
-      {
-        id: "c3-s11",
-        type: "code_practice",
-        prompt: "Write the condition that checks if health is zero or less.",
-        target_line: "if health <= 0:",
-        hint: "Start with if, then the variable, then <=, then 0, end with :"
-      }
-    ]
+    ],
   },
+
+  // -------------------------------------------------------------------
+  // CHAPTER 4: INPUT
+  // -------------------------------------------------------------------
   {
-    id: "chapter-4",
-    title: "Signals & Inputs",
-    description: "Mobile Touch & Buttons",
-    goal: "signals (Godot's event system) and Input — including touch for mobile games.",
-    cover_image: "/images/ch4-cover.png",
-    slides: [
+    id: "input",
+    title: "Input",
+    description: "Keyboard and touch",
+    accent: "from-accent to-success",
+    lessons: [
       {
-        id: "c4-s1",
-        type: "info",
-        title: "What is a signal?",
-        body: "Signals are Godot's way of saying 'something happened!' A button can shout 'I was pressed!' and your script listens."
+        id: "input-keyboard",
+        title: "Keyboard",
+        subtitle: "Read key presses",
+        steps: [
+          {
+            id: "i1-1",
+            type: "text",
+            title: "Input actions",
+            body: "Godot uses named actions like ui_right. Check them with Input.",
+            code: `if Input.is_action_pressed("ui_right"):\n    velocity.x = 100`,
+          },
+          {
+            id: "i1-2",
+            type: "visual",
+            title: "Press right arrow",
+            description: "Pressing right makes the player move right.",
+            simulation: {
+              kind: "input",
+              fromKey: "→",
+              direction: "right",
+              caption: "Right arrow → move right",
+            },
+          },
+          {
+            id: "i1-3",
+            type: "quiz",
+            question: "Which line reads input?",
+            options: [
+              `Input.is_action_pressed("ui_right")`,
+              `Print.is_action("ui_right")`,
+              `Read.action("ui_right")`,
+            ],
+            correctIndex: 0,
+          },
+          {
+            id: "i1-4",
+            type: "input",
+            prompt: "Check if the jump action is pressed.",
+            template: `Input.is_action_____("jump")`,
+            answers: ["pressed"],
+            hint: "Method is is_action_pressed.",
+          },
+          {
+            id: "i1-5",
+            type: "prediction",
+            prompt: "What happens when the player taps left arrow?",
+            code: `if Input.is_action_pressed("ui_left"):\n    velocity.x = -100`,
+            options: ["Move left", "Move right", "Jump", "Nothing"],
+            correctIndex: 0,
+          },
+        ],
       },
       {
-        id: "c4-s2",
-        type: "code",
-        code: "button.pressed.connect(_on_button_pressed)\n\nfunc _on_button_pressed():\n    print(\"Button tapped!\")",
-        explanation: "Connect once, react every time."
+        id: "input-touch",
+        title: "Touch",
+        subtitle: "Mobile-friendly input",
+        steps: [
+          {
+            id: "i2-1",
+            type: "text",
+            title: "Touch is just an action",
+            body: "Map a touch button to an action like tap. Then check it like a key.",
+            code: `if Input.is_action_just_pressed("tap"):\n    jump()`,
+          },
+          {
+            id: "i2-2",
+            type: "visual",
+            title: "Tap to jump",
+            description: "A screen tap triggers the jump action.",
+            simulation: {
+              kind: "input",
+              fromKey: "TAP",
+              direction: "up",
+              caption: "Tap → jump",
+            },
+          },
+          {
+            id: "i2-3",
+            type: "quiz",
+            question: "Which is best for phones?",
+            options: ["Keyboard only", "Touch input", "Mouse drag"],
+            correctIndex: 1,
+          },
+          {
+            id: "i2-4",
+            type: "input",
+            prompt: "Detect a single tap (just pressed).",
+            template: `Input.is_action____pressed("tap")`,
+            answers: ["_just_"],
+            hint: "Pattern: is_action_just_pressed",
+          },
+        ],
       },
-      {
-        id: "c4-s3",
-        type: "info",
-        title: "Input on mobile",
-        body: "Handle touch events to make your game playable on phones.",
-        image_caption: "[Mobile phone screenshot showing a finger tapping a Godot game button]",
-        image_url: "/images/mobile-touch.png"
-      },
-      {
-        id: "c4-s4",
-        type: "code",
-        code: "func _input(event):\n    if event is InputEventScreenTouch and event.pressed:\n        print(\"Screen tapped!\")",
-        explanation: "This function is called whenever the player touches the screen or presses a key."
-      },
-      {
-        id: "c4-s5",
-        type: "info",
-        title: "Action map",
-        body: "In Project Settings > Input Map, you define actions like 'jump' that work for keyboard, gamepad, and touch."
-      },
-      {
-        id: "c4-s6",
-        type: "code",
-        code: "if Input.is_action_just_pressed(\"jump\"):\n    velocity.y = -300",
-        explanation: "Check for the 'jump' action anywhere."
-      },
-      {
-        id: "c4-s7",
-        type: "multiple_choice",
-        question: "Signals are best for...",
-        options: ["Math operations", "Reacting to events", "Storing data", "Drawing graphics"],
-        correct_option_index: 1,
-        hint: "They fire when something happens."
-      },
-      {
-        id: "c4-s8",
-        type: "fill_in_blank",
-        code_snippet_before: "Input.is_action_just_pressed(\"",
-        code_snippet_after: "\")",
-        answer: "jump",
-        hint: "We're checking the action named jump."
-      },
-      {
-        id: "c4-s9",
-        type: "multiple_choice",
-        question: "Which event fires when the player taps the screen?",
-        options: ["InputEventKey", "InputEventScreenTouch", "InputEventMouseMotion", "InputEventJoypad"],
-        correct_option_index: 1,
-        hint: "Touch starts with 'Screen' on mobile."
-      },
-      {
-        id: "c4-s10",
-        type: "drag_drop",
-        tokens: ["button", ".pressed", ".connect", "(_on_button_pressed)"],
-        correct_order: ["button", ".pressed", ".connect", "(_on_button_pressed)"]
-      },
-      {
-        id: "c4-s11",
-        type: "code_practice",
-        prompt: "Write the function that handles all input events.",
-        target_line: "func _input(event):",
-        hint: "It's a special function called _input that takes one parameter: event."
-      }
-    ]
+    ],
   },
+
+  // -------------------------------------------------------------------
+  // CHAPTER 5: SIGNALS
+  // -------------------------------------------------------------------
   {
-    id: "chapter-5",
-    title: "Nodes & Scenes",
-    description: "The Godot Hierarchy",
-    goal: "understand Node, Scene, parent/child, and how scripts attach.",
-    cover_image: "/images/ch5-cover.png",
-    slides: [
+    id: "signals",
+    title: "Signals",
+    description: "Nodes talking to nodes",
+    accent: "from-primary to-accent",
+    lessons: [
       {
-        id: "c5-s1",
-        type: "info",
-        title: "Everything is a Node",
-        body: "In Godot, every part of your game — sprites, sounds, even logic — is a Node. Nodes go inside Scenes."
+        id: "signals-what",
+        title: "What is a Signal?",
+        subtitle: "Messages between nodes",
+        steps: [
+          {
+            id: "s1-1",
+            type: "text",
+            title: "A signal is a message",
+            body: "One node shouts an event. Other nodes listen and react.",
+          },
+          {
+            id: "s1-2",
+            type: "visual",
+            title: "Button → Player",
+            description: "The button sends a signal. The player listens.",
+            simulation: {
+              kind: "signal",
+              caption: "Signal travels from button to player",
+            },
+          },
+          {
+            id: "s1-3",
+            type: "quiz",
+            question: "Signals are most like…",
+            options: ["Variables", "Messages", "Loops", "Files"],
+            correctIndex: 1,
+          },
+        ],
       },
       {
-        id: "c5-s2",
-        type: "info",
-        title: "Scene tree",
-        body: "Nodes are organized in a tree structure.",
-        image_caption: "[Screenshot: Godot Scene panel showing Player (CharacterBody2D) with Sprite2D and CollisionShape2D children]",
-        image_url: "/images/scene-tree.png"
+        id: "signals-connect",
+        title: "Connect Signals",
+        subtitle: "Wire them in code",
+        steps: [
+          {
+            id: "s2-1",
+            type: "text",
+            title: "Connect with .connect()",
+            body: "Tell the signal which function to call when it fires.",
+            code: `button.pressed.connect(on_pressed)`,
+          },
+          {
+            id: "s2-2",
+            type: "input",
+            prompt: "Connect the pressed signal.",
+            template: `button.pressed.___(on_pressed)`,
+            answers: ["connect"],
+          },
+          {
+            id: "s2-3",
+            type: "debug",
+            prompt: "Find the broken line.",
+            lines: [
+              `func _ready():`,
+              `    button.pressed.connect on_pressed`,
+              `    print("ready")`,
+            ],
+            buggyLineIndex: 1,
+            fix: `    button.pressed.connect(on_pressed)`,
+            explanation: "connect needs () with the function inside.",
+          },
+          {
+            id: "s2-4",
+            type: "prediction",
+            prompt: "Button is pressed. What happens?",
+            code: `button.pressed.connect(on_pressed)\n\nfunc on_pressed():\n    print("clicked!")`,
+            options: [
+              `Prints "clicked!"`,
+              "Prints nothing",
+              "Errors out",
+              "Prints the word pressed",
+            ],
+            correctIndex: 0,
+          },
+        ],
       },
       {
-        id: "c5-s3",
-        type: "code",
-        code: "extends CharacterBody2D\n\nfunc _ready():\n    print(\"Player ready\")",
-        explanation: "extends tells Godot 'this script controls a CharacterBody2D node.'"
+        id: "signals-button",
+        title: "Button → Action",
+        subtitle: "Make it do something",
+        steps: [
+          {
+            id: "s3-1",
+            type: "text",
+            title: "The handler runs",
+            body: "When the signal fires, your function runs. Put any code there.",
+            code: `func _on_button_pressed():\n    print("clicked!")`,
+          },
+          {
+            id: "s3-2",
+            type: "visual",
+            title: "Click triggers code",
+            description: "Pressing the button runs the connected function.",
+            simulation: {
+              kind: "signal",
+              caption: "Press → run handler",
+            },
+          },
+          {
+            id: "s3-3",
+            type: "quiz",
+            question: "What runs when the signal fires?",
+            options: [
+              "The connected function",
+              "Every function in the file",
+              "Nothing",
+            ],
+            correctIndex: 0,
+          },
+        ],
+      },
+    ],
+  },
+
+  // -------------------------------------------------------------------
+  // CHAPTER 6: GAME LOGIC
+  // -------------------------------------------------------------------
+  {
+    id: "game-logic",
+    title: "Game Logic",
+    description: "Score, enemies, collisions",
+    accent: "from-warning to-primary",
+    lessons: [
+      {
+        id: "logic-score",
+        title: "Score System",
+        subtitle: "Count the points",
+        steps: [
+          {
+            id: "g1-1",
+            type: "text",
+            title: "Track a score",
+            body: "Use a variable. Add to it when the player earns points.",
+            code: `var score = 0\n\nfunc add_point():\n    score += 1`,
+          },
+          {
+            id: "g1-2",
+            type: "visual",
+            title: "Score ticks up",
+            description: "Each event adds to the score counter.",
+            simulation: {
+              kind: "score",
+              fromValue: 0,
+              toValue: 5,
+              caption: "Score: 0 → 5",
+            },
+          },
+          {
+            id: "g1-3",
+            type: "input",
+            prompt: "Add one to the score.",
+            template: `score ___ 1`,
+            answers: ["+="],
+            hint: "Shorthand for score = score + 1.",
+          },
+          {
+            id: "g1-4",
+            type: "prediction",
+            prompt: "What does this print?",
+            code: `var score = 5\nscore += 2\nprint(score)`,
+            options: ["5", "7", "2", "score"],
+            correctIndex: 1,
+          },
+        ],
       },
       {
-        id: "c5-s4",
-        type: "info",
-        title: "Accessing children with $",
-        body: "If your Player has a child called Sprite2D, you can grab it with $Sprite2D in code."
+        id: "logic-enemy",
+        title: "Enemy Behavior",
+        subtitle: "Chase the player",
+        steps: [
+          {
+            id: "g2-1",
+            type: "text",
+            title: "Chase logic",
+            body: "Subtract positions to get a direction. Normalize it. Multiply by speed.",
+            code: `var dir = (player.position - position).normalized()\nvelocity = dir * speed`,
+          },
+          {
+            id: "g2-2",
+            type: "visual",
+            title: "Enemy chases",
+            description: "Enemy moves toward the player every frame.",
+            simulation: {
+              kind: "chase",
+              caption: "Enemy hunts the player",
+            },
+          },
+          {
+            id: "g2-3",
+            type: "quiz",
+            question: "What does .normalized() do to a vector?",
+            options: [
+              "Doubles its length",
+              "Sets its length to 1",
+              "Flips it",
+              "Removes it",
+            ],
+            correctIndex: 1,
+            explanation: "Normalized vectors have length 1, so speed stays steady.",
+          },
+        ],
       },
       {
-        id: "c5-s5",
-        type: "code",
-        code: "func _ready():\n    $Sprite2D.modulate = Color.RED",
-        explanation: "Tint the sprite red on start."
+        id: "logic-collision",
+        title: "Collisions",
+        subtitle: "When bodies touch",
+        steps: [
+          {
+            id: "g3-1",
+            type: "text",
+            title: "Group + check",
+            body: "Add nodes to a group, then check the group on collision.",
+            code: `func _on_body_entered(body):\n    if body.is_in_group("enemy"):\n        die()`,
+          },
+          {
+            id: "g3-2",
+            type: "visual",
+            title: "Player meets enemy",
+            description: "When they touch, the collision handler runs.",
+            simulation: {
+              kind: "collision",
+              caption: "Collision detected",
+            },
+          },
+          {
+            id: "g3-3",
+            type: "quiz",
+            question: "How do we know the body is an enemy?",
+            options: [
+              "Check its color",
+              "Check its group",
+              "Print it",
+              "Guess",
+            ],
+            correctIndex: 1,
+          },
+          {
+            id: "g3-4",
+            type: "input",
+            prompt: "Check if the body is in the enemy group.",
+            template: `if body.is_in_group(___):`,
+            answers: [`"enemy"`],
+            hint: "Use double quotes around the group name.",
+          },
+        ],
       },
-      {
-        id: "c5-s6",
-        type: "info",
-        title: "Scenes are reusable",
-        body: "Save a setup as a .tscn scene and reuse it everywhere — like a stamp."
-      },
-      {
-        id: "c5-s7",
-        type: "multiple_choice",
-        question: "What does 'extends' do?",
-        options: ["Imports a library", "Tells the script which Node type it controls", "Creates a new scene", "Runs once on start"],
-        correct_option_index: 1,
-        hint: "It links a script to a node type."
-      },
-      {
-        id: "c5-s8",
-        type: "fill_in_blank",
-        code_snippet_before: "extends ",
-        code_snippet_after: "2D",
-        answer: "CharacterBody",
-        hint: "The node type for moving characters in 2D."
-      },
-      {
-        id: "c5-s9",
-        type: "multiple_choice",
-        question: "How do you grab a child node called Camera2D in code?",
-        options: ["Camera2D", "$Camera2D", "get(Camera2D)", "@Camera2D"],
-        correct_option_index: 1,
-        hint: "Dollar-sign shortcut."
-      },
-      {
-        id: "c5-s10",
-        type: "drag_drop",
-        tokens: ["extends", "Node2D"],
-        correct_order: ["extends", "Node2D"]
-      },
-      {
-        id: "c5-s11",
-        type: "code_practice",
-        prompt: "Write the line that makes this script control a Node2D.",
-        target_line: "extends Node2D",
-        hint: "extends followed by the node type."
-      }
-    ]
-  }
+    ],
+  },
 ];
+
+// Helpers
+export function findChapter(id: string): Chapter | undefined {
+  return curriculum.find((c) => c.id === id);
+}
+
+export function findLesson(
+  chapterId: string,
+  lessonId: string,
+): Lesson | undefined {
+  return findChapter(chapterId)?.lessons.find((l) => l.id === lessonId);
+}
+
+export function totalLessons(): number {
+  return curriculum.reduce((sum, c) => sum + c.lessons.length, 0);
+}
+
+export function totalSteps(): number {
+  return curriculum.reduce(
+    (sum, c) =>
+      sum + c.lessons.reduce((s, l) => s + l.steps.length, 0),
+    0,
+  );
+}

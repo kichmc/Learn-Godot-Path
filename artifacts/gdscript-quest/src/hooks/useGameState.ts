@@ -1,22 +1,28 @@
-import { useCallback, useEffect, useState } from "react";
-import { curriculum } from "@/data/curriculum";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { curriculum, totalLessons, totalSteps } from "@/data/curriculum";
 
-const STORAGE_KEY = "gdscript-quest:state:v1";
+const STORAGE_KEY = "gdscript-quest:state:v2";
 
 export interface GameState {
   xp: number;
   coins: number;
+  // chapterId -> true when every lesson in it is done
   completedChapters: string[];
-  chapterProgress: Record<string, number>;
-  completedSlides: Record<string, string[]>;
+  // chapterId -> lessonId[]
+  completedLessons: Record<string, string[]>;
+  // chapterId -> lessonId -> stepId[]
+  completedSteps: Record<string, Record<string, string[]>>;
+  // chapterId -> lessonId -> last step index
+  lessonProgress: Record<string, Record<string, number>>;
 }
 
 const initialState: GameState = {
   xp: 0,
   coins: 0,
   completedChapters: [],
-  chapterProgress: {},
-  completedSlides: {},
+  completedLessons: {},
+  completedSteps: {},
+  lessonProgress: {},
 };
 
 function loadState(): GameState {
@@ -29,8 +35,9 @@ function loadState(): GameState {
       xp: parsed.xp ?? 0,
       coins: parsed.coins ?? 0,
       completedChapters: parsed.completedChapters ?? [],
-      chapterProgress: parsed.chapterProgress ?? {},
-      completedSlides: parsed.completedSlides ?? {},
+      completedLessons: parsed.completedLessons ?? {},
+      completedSteps: parsed.completedSteps ?? {},
+      lessonProgress: parsed.lessonProgress ?? {},
     };
   } catch {
     return initialState;
@@ -61,9 +68,9 @@ export function useGameState() {
   const isChapterUnlocked = useCallback(
     (chapterId: string) => {
       const idx = curriculum.findIndex((c) => c.id === chapterId);
-      if (idx === 0) return true;
-      const prev = curriculum[idx - 1];
-      return prev ? state.completedChapters.includes(prev.id) : false;
+      if (idx <= 0) return true;
+      const prev = curriculum[idx - 1]!;
+      return state.completedChapters.includes(prev.id);
     },
     [state.completedChapters],
   );
@@ -73,40 +80,103 @@ export function useGameState() {
     [state.completedChapters],
   );
 
+  const isLessonUnlocked = useCallback(
+    (chapterId: string, lessonId: string) => {
+      if (!isChapterUnlocked(chapterId)) return false;
+      const ch = curriculum.find((c) => c.id === chapterId);
+      if (!ch) return false;
+      const idx = ch.lessons.findIndex((l) => l.id === lessonId);
+      if (idx <= 0) return true;
+      const prev = ch.lessons[idx - 1]!;
+      return (state.completedLessons[chapterId] ?? []).includes(prev.id);
+    },
+    [isChapterUnlocked, state.completedLessons],
+  );
+
+  const isLessonComplete = useCallback(
+    (chapterId: string, lessonId: string) =>
+      (state.completedLessons[chapterId] ?? []).includes(lessonId),
+    [state.completedLessons],
+  );
+
+  const isStepComplete = useCallback(
+    (chapterId: string, lessonId: string, stepId: string) =>
+      (state.completedSteps[chapterId]?.[lessonId] ?? []).includes(stepId),
+    [state.completedSteps],
+  );
+
+  const getLessonProgress = useCallback(
+    (chapterId: string, lessonId: string) =>
+      state.lessonProgress[chapterId]?.[lessonId] ?? 0,
+    [state.lessonProgress],
+  );
+
   const getChapterProgress = useCallback(
-    (chapterId: string) => state.chapterProgress[chapterId] ?? 0,
-    [state.chapterProgress],
+    (chapterId: string) => {
+      const ch = curriculum.find((c) => c.id === chapterId);
+      if (!ch) return { done: 0, total: 0 };
+      const done = (state.completedLessons[chapterId] ?? []).length;
+      return { done, total: ch.lessons.length };
+    },
+    [state.completedLessons],
   );
 
-  const isSlideCompleted = useCallback(
-    (chapterId: string, slideId: string) =>
-      (state.completedSlides[chapterId] ?? []).includes(slideId),
-    [state.completedSlides],
-  );
+  const totalDoneSteps = useMemo(() => {
+    return Object.values(state.completedSteps).reduce(
+      (s, lessons) =>
+        s + Object.values(lessons).reduce((ss, arr) => ss + arr.length, 0),
+      0,
+    );
+  }, [state.completedSteps]);
 
-  const totalSlides = curriculum.reduce((sum, c) => sum + c.slides.length, 0);
-  const completedSlideCount = Object.values(state.completedSlides).reduce(
-    (sum, arr) => sum + arr.length,
+  const overallProgress = useMemo(() => {
+    const total = totalSteps();
+    return total ? Math.min(1, totalDoneSteps / total) : 0;
+  }, [totalDoneSteps]);
+
+  const chaptersDone = state.completedChapters.length;
+  const lessonsDone = Object.values(state.completedLessons).reduce(
+    (s, arr) => s + arr.length,
     0,
   );
-  const overallProgress = totalSlides ? completedSlideCount / totalSlides : 0;
 
-  const awardSlide = useCallback(
-    (chapterId: string, slideId: string, opts: { xp: number; coins: number }) => {
+  const setLessonStepIndex = useCallback(
+    (chapterId: string, lessonId: string, idx: number) => {
+      setState((prev) => ({
+        ...prev,
+        lessonProgress: {
+          ...prev.lessonProgress,
+          [chapterId]: {
+            ...(prev.lessonProgress[chapterId] ?? {}),
+            [lessonId]: idx,
+          },
+        },
+      }));
+    },
+    [],
+  );
+
+  const awardStep = useCallback(
+    (
+      chapterId: string,
+      lessonId: string,
+      stepId: string,
+      opts: { xp: number; coins: number },
+    ) => {
       setState((prev) => {
-        const already = (prev.completedSlides[chapterId] ?? []).includes(slideId);
-        if (already) return prev;
-        const newCompleted = [
-          ...(prev.completedSlides[chapterId] ?? []),
-          slideId,
-        ];
+        const lessonsDoneSteps = prev.completedSteps[chapterId] ?? {};
+        const stepsForLesson = lessonsDoneSteps[lessonId] ?? [];
+        if (stepsForLesson.includes(stepId)) return prev;
         return {
           ...prev,
           xp: prev.xp + opts.xp,
           coins: prev.coins + opts.coins,
-          completedSlides: {
-            ...prev.completedSlides,
-            [chapterId]: newCompleted,
+          completedSteps: {
+            ...prev.completedSteps,
+            [chapterId]: {
+              ...lessonsDoneSteps,
+              [lessonId]: [...stepsForLesson, stepId],
+            },
           },
         };
       });
@@ -114,24 +184,49 @@ export function useGameState() {
     [],
   );
 
-  const setSlideIndex = useCallback((chapterId: string, idx: number) => {
-    setState((prev) => ({
-      ...prev,
-      chapterProgress: { ...prev.chapterProgress, [chapterId]: idx },
-    }));
-  }, []);
-
-  const completeChapter = useCallback((chapterId: string) => {
-    setState((prev) => {
-      if (prev.completedChapters.includes(chapterId)) return prev;
-      return {
-        ...prev,
-        xp: prev.xp + 50,
-        coins: prev.coins + 25,
-        completedChapters: [...prev.completedChapters, chapterId],
-      };
-    });
-  }, []);
+  const completeLesson = useCallback(
+    (
+      chapterId: string,
+      lessonId: string,
+    ): { chapterCompletedNow: boolean } => {
+      let chapterCompletedNow = false;
+      setState((prev) => {
+        const lessonsForChapter = prev.completedLessons[chapterId] ?? [];
+        let newLessons = lessonsForChapter;
+        let xpDelta = 0;
+        let coinDelta = 0;
+        if (!lessonsForChapter.includes(lessonId)) {
+          newLessons = [...lessonsForChapter, lessonId];
+          xpDelta += 25;
+          coinDelta += 10;
+        }
+        const ch = curriculum.find((c) => c.id === chapterId);
+        let completedChapters = prev.completedChapters;
+        if (
+          ch &&
+          ch.lessons.every((l) => newLessons.includes(l.id)) &&
+          !prev.completedChapters.includes(chapterId)
+        ) {
+          completedChapters = [...prev.completedChapters, chapterId];
+          xpDelta += 50;
+          coinDelta += 25;
+          chapterCompletedNow = true;
+        }
+        return {
+          ...prev,
+          xp: prev.xp + xpDelta,
+          coins: prev.coins + coinDelta,
+          completedLessons: {
+            ...prev.completedLessons,
+            [chapterId]: newLessons,
+          },
+          completedChapters,
+        };
+      });
+      return { chapterCompletedNow };
+    },
+    [],
+  );
 
   const resetAll = useCallback(() => {
     setState(initialState);
@@ -141,13 +236,20 @@ export function useGameState() {
     state,
     hydrated,
     overallProgress,
+    chaptersDone,
+    lessonsDone,
+    totalLessonsCount: totalLessons(),
+    totalChaptersCount: curriculum.length,
     isChapterUnlocked,
     isChapterComplete,
+    isLessonUnlocked,
+    isLessonComplete,
+    isStepComplete,
+    getLessonProgress,
     getChapterProgress,
-    isSlideCompleted,
-    awardSlide,
-    setSlideIndex,
-    completeChapter,
+    setLessonStepIndex,
+    awardStep,
+    completeLesson,
     resetAll,
   };
 }

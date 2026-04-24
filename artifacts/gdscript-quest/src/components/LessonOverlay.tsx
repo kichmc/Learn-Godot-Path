@@ -1,82 +1,94 @@
 import { useEffect, useMemo, useState } from "react";
-import { X, ArrowLeft, ArrowRight, Trophy, Sparkles, Coins } from "lucide-react";
+import {
+  X,
+  ArrowLeft,
+  ArrowRight,
+  Trophy,
+  Sparkles,
+  Coins,
+} from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import type { Chapter, Slide } from "@/data/curriculum";
-import { InfoSlideView } from "./slides/InfoSlideView";
-import { CodeSlideView } from "./slides/CodeSlideView";
-import { MultipleChoiceView } from "./slides/MultipleChoiceView";
-import { FillInBlankView } from "./slides/FillInBlankView";
-import { DragDropView } from "./slides/DragDropView";
-import { CodePracticeView } from "./slides/CodePracticeView";
+import type { Chapter, Lesson, Step } from "@/data/curriculum";
+import { TextStep } from "./steps/TextStep";
+import { QuizStep } from "./steps/QuizStep";
+import { InputStep } from "./steps/InputStep";
+import { VisualStep } from "./steps/VisualStep";
+import { DebugStep } from "./steps/DebugStep";
+import { PredictionStep } from "./steps/PredictionStep";
 import { CelebrateBurst } from "./CelebrateBurst";
 import { playDing, playPop, playBuzz } from "@/lib/sound";
 
 interface Props {
   chapter: Chapter;
+  lesson: Lesson;
   startIndex: number;
   onClose: () => void;
-  onSlideComplete: (slideId: string, opts: { xp: number; coins: number }) => void;
-  onChapterComplete: () => void;
+  onStepComplete: (
+    stepId: string,
+    opts: { xp: number; coins: number },
+  ) => void;
+  onLessonComplete: () => { chapterCompletedNow: boolean };
   onIndexChange: (idx: number) => void;
-  isSlideCompleted: (slideId: string) => boolean;
+  isStepCompleted: (stepId: string) => boolean;
 }
 
-function isQuestion(s: Slide) {
+function isQuestion(s: Step) {
   return (
-    s.type === "multiple_choice" ||
-    s.type === "fill_in_blank" ||
-    s.type === "drag_drop" ||
-    s.type === "code_practice"
+    s.type === "quiz" ||
+    s.type === "input" ||
+    s.type === "debug" ||
+    s.type === "prediction"
   );
 }
 
 export function LessonOverlay({
   chapter,
+  lesson,
   startIndex,
   onClose,
-  onSlideComplete,
-  onChapterComplete,
+  onStepComplete,
+  onLessonComplete,
   onIndexChange,
-  isSlideCompleted,
+  isStepCompleted,
 }: Props) {
+  const total = lesson.steps.length;
   const [idx, setIdx] = useState(() =>
-    Math.min(Math.max(startIndex, 0), chapter.slides.length - 1),
+    Math.min(Math.max(startIndex, 0), total - 1),
   );
   const [answeredCorrect, setAnsweredCorrect] = useState(false);
   const [celebrate, setCelebrate] = useState(false);
   const [finished, setFinished] = useState(false);
+  const [chapterDone, setChapterDone] = useState(false);
   const [earned, setEarned] = useState({ xp: 0, coins: 0 });
 
-  const slide = chapter.slides[idx]!;
-  const total = chapter.slides.length;
-  const sessionEarned = earned;
+  const step = lesson.steps[idx]!;
+  const stepKey = useMemo(
+    () => `${chapter.id}:${lesson.id}:${step.id}`,
+    [chapter.id, lesson.id, step.id],
+  );
 
-  const slideKey = useMemo(() => `${chapter.id}:${slide.id}`, [chapter.id, slide.id]);
-
-  // For info/code slides — auto-mark done & enable Continue
-  const autoDone = !isQuestion(slide);
+  const autoDone = !isQuestion(step); // text + visual auto-advance
 
   useEffect(() => {
     setAnsweredCorrect(false);
     setCelebrate(false);
     onIndexChange(idx);
-    if (autoDone) {
-      // award small completion bonus once for new slides
-      if (!isSlideCompleted(slide.id)) {
-        onSlideComplete(slide.id, { xp: 2, coins: 0 });
-        setEarned((e) => ({ xp: e.xp + 2, coins: e.coins }));
-      }
+    if (autoDone && !isStepCompleted(step.id)) {
+      onStepComplete(step.id, { xp: 2, coins: 0 });
+      setEarned((e) => ({ xp: e.xp + 2, coins: e.coins }));
+    } else if (autoDone) {
+      // Already completed before — no XP, but enable continue
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [slideKey]);
+  }, [stepKey]);
 
   const onAnswer = (correct: boolean) => {
     if (correct) {
       setAnsweredCorrect(true);
       setCelebrate(true);
       playDing();
-      if (!isSlideCompleted(slide.id)) {
-        onSlideComplete(slide.id, { xp: 10, coins: 5 });
+      if (!isStepCompleted(step.id)) {
+        onStepComplete(step.id, { xp: 10, coins: 5 });
         setEarned((e) => ({ xp: e.xp + 10, coins: e.coins + 5 }));
       }
       setTimeout(() => setCelebrate(false), 700);
@@ -87,10 +99,13 @@ export function LessonOverlay({
 
   const goNext = () => {
     if (idx + 1 >= total) {
-      // finished chapter
+      const result = onLessonComplete();
+      setEarned((e) => ({
+        xp: e.xp + 25 + (result.chapterCompletedNow ? 50 : 0),
+        coins: e.coins + 10 + (result.chapterCompletedNow ? 25 : 0),
+      }));
+      setChapterDone(result.chapterCompletedNow);
       setFinished(true);
-      onChapterComplete();
-      setEarned((e) => ({ xp: e.xp + 50, coins: e.coins + 25 }));
       return;
     }
     playPop();
@@ -113,7 +128,7 @@ export function LessonOverlay({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 bg-background"
+      className="fixed inset-0 z-[60] bg-background"
       data-testid="lesson-overlay"
     >
       <div className="flex flex-col h-[100dvh] max-w-md mx-auto">
@@ -137,52 +152,53 @@ export function LessonOverlay({
                 className="h-full bg-gradient-to-r from-primary to-accent"
               />
             </div>
-            <div className="text-[11px] text-muted-foreground mt-1">
-              {chapter.title} • {idx + 1} / {total}
+            <div className="text-[11px] text-muted-foreground mt-1 truncate">
+              {chapter.title} · {lesson.title} · {idx + 1}/{total}
             </div>
           </div>
         </div>
 
-        {/* Slide body */}
+        {/* Step body */}
         <div className="flex-1 overflow-y-auto px-5 py-6 pb-32 relative">
           <AnimatePresence mode="wait">
             <motion.div
-              key={slide.id}
+              key={step.id}
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.22 }}
               className="relative"
             >
-              <div className="absolute left-1/2 top-4 -translate-x-1/2 z-10">
+              <div className="absolute left-1/2 top-0 -translate-x-1/2 z-10 pointer-events-none">
                 <CelebrateBurst show={celebrate} />
               </div>
-              {slide.type === "info" && <InfoSlideView slide={slide} />}
-              {slide.type === "code" && <CodeSlideView slide={slide} />}
-              {slide.type === "multiple_choice" && (
-                <MultipleChoiceView
-                  slide={slide}
+
+              {step.type === "text" && <TextStep step={step} />}
+              {step.type === "visual" && <VisualStep step={step} />}
+              {step.type === "quiz" && (
+                <QuizStep
+                  step={step}
                   answered={answeredCorrect}
                   onAnswer={onAnswer}
                 />
               )}
-              {slide.type === "fill_in_blank" && (
-                <FillInBlankView
-                  slide={slide}
+              {step.type === "input" && (
+                <InputStep
+                  step={step}
                   answered={answeredCorrect}
                   onAnswer={onAnswer}
                 />
               )}
-              {slide.type === "drag_drop" && (
-                <DragDropView
-                  slide={slide}
+              {step.type === "debug" && (
+                <DebugStep
+                  step={step}
                   answered={answeredCorrect}
                   onAnswer={onAnswer}
                 />
               )}
-              {slide.type === "code_practice" && (
-                <CodePracticeView
-                  slide={slide}
+              {step.type === "prediction" && (
+                <PredictionStep
+                  step={step}
                   answered={answeredCorrect}
                   onAnswer={onAnswer}
                 />
@@ -199,7 +215,7 @@ export function LessonOverlay({
           <div className="flex items-center gap-3">
             <button
               type="button"
-              data-testid="button-back-slide"
+              data-testid="button-back-step"
               onClick={goBack}
               className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-full bg-secondary text-foreground font-semibold active:scale-95 transition"
             >
@@ -208,7 +224,7 @@ export function LessonOverlay({
             </button>
             <button
               type="button"
-              data-testid="button-continue-slide"
+              data-testid="button-continue-step"
               onClick={goNext}
               disabled={!canContinue}
               className={`flex-1 inline-flex items-center justify-center gap-1.5 px-4 py-3 rounded-full font-semibold active:scale-95 transition
@@ -219,7 +235,7 @@ export function LessonOverlay({
                 }
               `}
             >
-              {idx + 1 >= total ? "Finish Chapter" : "Continue"}
+              {idx + 1 >= total ? "Finish lesson" : "Continue"}
               <ArrowRight className="w-4 h-4" />
             </button>
           </div>
@@ -228,9 +244,11 @@ export function LessonOverlay({
 
       <AnimatePresence>
         {finished && (
-          <ChapterCompleteScreen
+          <LessonCompleteScreen
             chapter={chapter}
-            earned={sessionEarned}
+            lesson={lesson}
+            chapterDone={chapterDone}
+            earned={earned}
             onClose={onClose}
           />
         )}
@@ -239,12 +257,16 @@ export function LessonOverlay({
   );
 }
 
-function ChapterCompleteScreen({
+function LessonCompleteScreen({
   chapter,
+  lesson,
+  chapterDone,
   earned,
   onClose,
 }: {
   chapter: Chapter;
+  lesson: Lesson;
+  chapterDone: boolean;
   earned: { xp: number; coins: number };
   onClose: () => void;
 }) {
@@ -253,8 +275,8 @@ function ChapterCompleteScreen({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-[60] bg-background/95 backdrop-blur-xl grid place-items-center px-6"
-      data-testid="chapter-complete"
+      className="fixed inset-0 z-[70] bg-background/95 backdrop-blur-xl grid place-items-center px-6"
+      data-testid="lesson-complete"
     >
       <motion.div
         initial={{ scale: 0.8, opacity: 0 }}
@@ -270,11 +292,15 @@ function ChapterCompleteScreen({
         </div>
         <div>
           <div className="text-xs uppercase tracking-widest text-accent font-bold">
-            Chapter Complete
+            {chapterDone ? "Chapter complete!" : "Lesson complete"}
           </div>
-          <h2 className="text-3xl font-extrabold mt-1">{chapter.title}</h2>
+          <h2 className="text-3xl font-extrabold mt-1">
+            {chapterDone ? chapter.title : lesson.title}
+          </h2>
           <p className="text-sm text-muted-foreground mt-2">
-            You leveled up your Godot skills.
+            {chapterDone
+              ? "You mastered the whole chapter."
+              : "Great job. One step closer to making your first game."}
           </p>
         </div>
         <div className="flex gap-3 justify-center">
@@ -288,7 +314,7 @@ function ChapterCompleteScreen({
         <button
           type="button"
           onClick={onClose}
-          data-testid="button-finish-chapter"
+          data-testid="button-finish-lesson"
           className="w-full px-5 py-3 rounded-full bg-gradient-to-r from-primary to-accent text-primary-foreground font-bold glow-primary active:scale-95 transition"
         >
           Continue your quest
