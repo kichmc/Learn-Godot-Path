@@ -171,6 +171,37 @@
 .gd-code .id { color: #8be9fd; }
 .gd-code .op { color: #ff79c6; }
 
+/* Tappable Godot node names inside any code block */
+.gd-code .gd-node-link {
+  color: #8be9fd;
+  font: inherit;
+  background: none;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  cursor: pointer;
+  border-bottom: 1px dashed rgba(139, 233, 253, 0.55);
+  transition: color 0.15s ease, background-color 0.15s ease,
+    border-color 0.15s ease;
+  border-radius: 3px;
+}
+.gd-code .gd-node-link:hover,
+.gd-code .gd-node-link:focus-visible {
+  color: #ffffff;
+  background: rgba(139, 233, 253, 0.18);
+  border-bottom-color: transparent;
+  outline: none;
+}
+.gd-code .gd-node-link:active { transform: translateY(1px); }
+
+/* One-shot pulse for the focused node card after a deep-link */
+@keyframes pulse-once {
+  0% { box-shadow: 0 0 0 0 rgba(139, 233, 253, 0.55); }
+  60% { box-shadow: 0 0 0 12px rgba(139, 233, 253, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(139, 233, 253, 0); }
+}
+.animate-pulse-once { animation: pulse-once 1.6s ease-out 1; }
+
 /* Editor-like textarea */
 .gd-editor {
   font-family: var(--app-font-mono);

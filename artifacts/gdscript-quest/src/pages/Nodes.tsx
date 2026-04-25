@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Boxes,
@@ -22,6 +22,8 @@ import { useGameState } from "@/hooks/useGameState";
 
 interface Props {
   onNavigate: (view: NavView) => void;
+  focusName?: string | null;
+  onFocusConsumed?: () => void;
 }
 
 const filters: { id: NodeCategory | "all"; label: string }[] = [
@@ -32,11 +34,31 @@ const filters: { id: NodeCategory | "all"; label: string }[] = [
   { id: "ui", label: "UI" },
 ];
 
-export default function Nodes({ onNavigate }: Props) {
+export default function Nodes({ onNavigate, focusName, onFocusConsumed }: Props) {
   const game = useGameState();
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<NodeCategory | "all">("all");
-  const [openName, setOpenName] = useState<string | null>(nodeDocs[0]?.name ?? null);
+  const [openName, setOpenName] = useState<string | null>(
+    focusName ?? nodeDocs[0]?.name ?? null,
+  );
+  const cardRefs = useRef<Record<string, HTMLDivElement | null>>({});
+
+  // When the user taps a node name inside a lesson, focus that card.
+  useEffect(() => {
+    if (!focusName) return;
+    setOpenName(focusName);
+    setQuery("");
+    setCategory("all");
+    // Wait for filter reset + expand animation, then scroll into view.
+    const t = setTimeout(() => {
+      cardRefs.current[focusName]?.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+      onFocusConsumed?.();
+    }, 80);
+    return () => clearTimeout(t);
+  }, [focusName, onFocusConsumed]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -112,6 +134,10 @@ export default function Nodes({ onNavigate }: Props) {
               onToggle={() =>
                 setOpenName((curr) => (curr === node.name ? null : node.name))
               }
+              cardRef={(el) => {
+                cardRefs.current[node.name] = el;
+              }}
+              highlight={focusName === node.name}
             />
           ))}
         </div>
@@ -151,19 +177,24 @@ function NodeCard({
   node,
   open,
   onToggle,
+  cardRef,
+  highlight,
 }: {
   node: NodeDoc;
   open: boolean;
   onToggle: () => void;
+  cardRef?: (el: HTMLDivElement | null) => void;
+  highlight?: boolean;
 }) {
   return (
     <div
+      ref={cardRef}
       data-testid={`node-card-${node.name}`}
       className={`rounded-2xl border transition overflow-hidden ${
         open
           ? "border-primary/50 bg-card/90 glow-primary"
           : "border-border/60 bg-card/60"
-      }`}
+      } ${highlight ? "ring-2 ring-accent/60 animate-pulse-once" : ""}`}
     >
       <button
         type="button"

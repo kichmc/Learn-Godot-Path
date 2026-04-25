@@ -1,4 +1,5 @@
 import { Fragment } from "react";
+import { KNOWN_NODE_NAMES, useOpenNode } from "@/lib/node-link";
 
 const KEYWORDS = new Set([
   "var", "func", "if", "elif", "else", "extends", "return", "for", "while",
@@ -88,20 +89,42 @@ function tokenizeLine(line: string): Tok[] {
 
 export function GdCode({ code }: { code: string }) {
   const lines = code.split("\n");
+  const onOpenNode = useOpenNode();
+
   return (
     <pre className="gd-code" data-testid="gd-code">
       <code>
         {lines.map((line, li) => (
           <Fragment key={li}>
-            {tokenizeLine(line).map((t, ti) =>
-              t.kind === "ws" ? (
-                <Fragment key={ti}>{t.value}</Fragment>
-              ) : (
+            {tokenizeLine(line).map((t, ti) => {
+              if (t.kind === "ws") {
+                return <Fragment key={ti}>{t.value}</Fragment>;
+              }
+              const isNodeLink =
+                onOpenNode && KNOWN_NODE_NAMES.has(t.value);
+              if (isNodeLink) {
+                return (
+                  <button
+                    key={ti}
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onOpenNode!(t.value);
+                    }}
+                    data-testid={`node-link-${t.value}`}
+                    title={`Learn about ${t.value}`}
+                    className="gd-node-link"
+                  >
+                    {t.value}
+                  </button>
+                );
+              }
+              return (
                 <span key={ti} className={t.kind}>
                   {t.value}
                 </span>
-              ),
-            )}
+              );
+            })}
             {li < lines.length - 1 ? "\n" : ""}
           </Fragment>
         ))}
