@@ -12,6 +12,22 @@ export type NodeCategoryId =
   | "nav"
   | "special";
 
+export type NodeDemoKind =
+  | "character_body"
+  | "area2d"
+  | "button"
+  | "camera2d"
+  | "collision_shape";
+
+export interface NodeDemoSpec {
+  kind: NodeDemoKind;
+  description: string; // what the user will see
+  elements: string[]; // visual elements present on stage
+  behavior: string; // what happens during the simulation
+  controls: ("play" | "step" | "touch")[];
+  teaching_tip: string; // 1-line takeaway
+}
+
 export interface NodeDoc {
   name: string;
   category: NodeCategoryId;
@@ -22,6 +38,7 @@ export interface NodeDoc {
   important?: boolean; // beginner-focus badge
   where_used?: string[]; // optional game examples
   parent?: string; // simple inheritance hint
+  demo?: NodeDemoSpec; // optional interactive simulation
 }
 
 export interface NodeCategory {
@@ -86,6 +103,17 @@ export const nodeCategories: NodeCategory[] = [
         important: true,
         where_used: ["Platformer player", "Patrolling enemy", "NPC"],
         parent: "Node2D",
+        demo: {
+          kind: "character_body",
+          description:
+            "A red player box slides across the ground when velocity is applied.",
+          elements: ["player box", "ground line", "velocity readout"],
+          behavior:
+            "Press Play and the player slides at 80 px/s. Tap the left or right side of the stage to flip direction. The box bounces off the walls.",
+          controls: ["play", "step", "touch"],
+          teaching_tip:
+            "Velocity is just a number. move_and_slide() is what actually moves the body.",
+        },
       },
       {
         name: "Sprite2D",
@@ -112,6 +140,17 @@ export const nodeCategories: NodeCategory[] = [
         important: true,
         where_used: ["Player hitbox", "Coin pickup zone", "Wall blocker"],
         parent: "Node2D",
+        demo: {
+          kind: "collision_shape",
+          description:
+            "Player has a visible dashed hitbox. Walls stop it the moment shapes touch.",
+          elements: ["player + hitbox outline", "left wall", "right wall", "collision flash"],
+          behavior:
+            "Press Play — the player slides right until its hitbox bumps the wall, then stops. Tap left/right to push the player by hand.",
+          controls: ["play", "step", "touch"],
+          teaching_tip:
+            "No CollisionShape2D = no body. The shape tells Godot what counts as touching.",
+        },
       },
       {
         name: "Area2D",
@@ -125,6 +164,17 @@ export const nodeCategories: NodeCategory[] = [
         important: true,
         where_used: ["Coin pickup", "Lava damage zone", "Door trigger"],
         parent: "Node2D",
+        demo: {
+          kind: "area2d",
+          description:
+            "A green detection zone in the middle. The player auto-bounces — the zone glows when touched.",
+          elements: ["player box", "detection zone", "event log"],
+          behavior:
+            "Player bounces left and right. When inside the zone, _on_body_entered fires and the zone turns bright green. Drag the player with your finger to test it manually.",
+          controls: ["play", "step", "touch"],
+          teaching_tip:
+            "Area2D doesn't push — it just notices. Perfect for coins, triggers, and damage zones.",
+        },
       },
       {
         name: "Camera2D",
@@ -138,6 +188,17 @@ export const nodeCategories: NodeCategory[] = [
         important: true,
         where_used: ["Side-scroller follow cam", "Boss zoom-in"],
         parent: "Node2D",
+        demo: {
+          kind: "camera2d",
+          description:
+            "A wide world with trees. The camera smoothly lerps to keep the player centered.",
+          elements: ["player box", "world scenery (trees)", "camera readout"],
+          behavior:
+            "Press Play — the player walks right and the world scrolls the other way as the camera follows. Drag the player anywhere with your finger to see the camera catch up.",
+          controls: ["play", "step", "touch"],
+          teaching_tip:
+            "The camera decides what the player sees. Make it follow the hero so the world scrolls naturally.",
+        },
       },
       {
         name: "TileMap",
@@ -212,6 +273,17 @@ export const nodeCategories: NodeCategory[] = [
         important: true,
         where_used: ["Main menu", "Pause panel", "Inventory slots"],
         parent: "Control",
+        demo: {
+          kind: "button",
+          description:
+            "Tap the on-screen button. A signal arrow flies to the player and triggers a jump.",
+          elements: ["UI button", "player box", "signal arrow", "event log"],
+          behavior:
+            "Each tap emits 'pressed'. The arrow shows the signal traveling, and the player jumps in response. Step also fires one programmatic press.",
+          controls: ["step", "touch"],
+          teaching_tip:
+            "A signal is a message. .connect() picks the function that runs when it fires.",
+        },
       },
       {
         name: "Label",

@@ -27,6 +27,7 @@ import {
 } from "@/data/nodes";
 import { GdCode } from "@/lib/gd-highlight";
 import { useGameState } from "@/hooks/useGameState";
+import { NodeDemo } from "@/components/nodes/NodeDemo";
 
 interface Props {
   onNavigate: (view: NavView) => void;
@@ -455,6 +456,17 @@ function NodeDetailView({
           {node.visual_hint}
         </div>
       </Field>
+
+      {/* Interactive demo */}
+      {node.demo && (
+        <Field
+          icon={<Sparkles className="w-3.5 h-3.5" />}
+          label="Try it — interactive demo"
+          tone="accent"
+        >
+          <NodeDemo spec={node.demo} nodeName={node.name} />
+        </Field>
+      )}
 
       {/* Use case */}
       <Field
