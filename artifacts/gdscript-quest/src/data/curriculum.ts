@@ -8,7 +8,8 @@ export type StepType =
   | "visual"
   | "debug"
   | "prediction"
-  | "test";
+  | "test"
+  | "script_explain";
 
 export interface BaseStep {
   id: string;
@@ -90,6 +91,13 @@ export interface VisualStep extends BaseStep {
   simulation: SimulationSpec;
 }
 
+export interface ScriptExplainStep extends BaseStep {
+  type: "script_explain";
+  title?: string;
+  intro?: string; // 1 line above the code
+  code: { line: string; explanation: string }[];
+}
+
 export interface TestStep extends BaseStep {
   type: "test";
   question: string;
@@ -112,7 +120,8 @@ export type Step =
   | VisualStep
   | DebugStep
   | PredictionStep
-  | TestStep;
+  | TestStep
+  | ScriptExplainStep;
 
 export interface Lesson {
   id: string;
@@ -272,6 +281,29 @@ export const curriculum: Chapter[] = [
             code: `print("Hello, Godot!")`,
           },
           {
+            id: "b3-walk",
+            type: "script_explain",
+            title: "Read this script line by line",
+            intro: "Tap each line to see what it does.",
+            code: [
+              {
+                line: "extends CharacterBody2D",
+                explanation:
+                  "Tells Godot this script controls a CharacterBody2D node — a movable character.",
+              },
+              {
+                line: "func _ready():",
+                explanation:
+                  "_ready() runs once, the moment the scene appears.",
+              },
+              {
+                line: '    print("Hello")',
+                explanation:
+                  'Prints the word "Hello" to the Output console for you to see.',
+              },
+            ],
+          },
+          {
             id: "b3-2",
             type: "prediction",
             prompt: "What is the output?",
@@ -330,6 +362,34 @@ export const curriculum: Chapter[] = [
             title: "Velocity is a Vector2",
             body: "It tells the player two things: speed on X and speed on Y.",
             code: `velocity = Vector2(100, 0)`,
+          },
+          {
+            id: "m1-walk",
+            type: "script_explain",
+            title: "Read this movement script",
+            intro: "Tap each line — see how a player walks right.",
+            code: [
+              {
+                line: "extends CharacterBody2D",
+                explanation:
+                  "Says this script controls a moving 2D body Godot already knows how to slide.",
+              },
+              {
+                line: "func _physics_process(delta):",
+                explanation:
+                  "Runs every physics frame — perfect for movement.",
+              },
+              {
+                line: "    velocity = Vector2(100, 0)",
+                explanation:
+                  "Sets velocity to 100 px/sec on X (right) and 0 on Y.",
+              },
+              {
+                line: "    move_and_slide()",
+                explanation:
+                  "Actually moves the body using velocity and handles collisions.",
+              },
+            ],
           },
           {
             id: "m1-2",

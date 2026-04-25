@@ -16,6 +16,7 @@ import { VisualStep } from "./steps/VisualStep";
 import { DebugStep } from "./steps/DebugStep";
 import { PredictionStep } from "./steps/PredictionStep";
 import { TestStep } from "./steps/TestStep";
+import { ScriptExplainStep } from "./steps/ScriptExplainStep";
 import { CelebrateBurst } from "./CelebrateBurst";
 import { playDing, playPop, playBuzz } from "@/lib/sound";
 
@@ -217,6 +218,9 @@ export function LessonOverlay({
                   answered={answeredCorrect}
                   onAnswer={onAnswer}
                 />
+              )}
+              {step.type === "script_explain" && (
+                <ScriptExplainStep step={step} />
               )}
             </motion.div>
           </AnimatePresence>

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { AnimatePresence } from "framer-motion";
 import { Header } from "@/components/Header";
-import { BottomNav } from "@/components/BottomNav";
+import { BottomNav, type NavView } from "@/components/BottomNav";
 import { ChapterNode } from "@/components/ChapterNode";
 import { ChapterScreen } from "@/components/ChapterScreen";
 import { LessonOverlay } from "@/components/LessonOverlay";
@@ -9,7 +9,11 @@ import { curriculum, type Lesson } from "@/data/curriculum";
 import { useGameState } from "@/hooks/useGameState";
 import { Sparkles } from "lucide-react";
 
-export default function Dashboard() {
+interface DashboardProps {
+  onNavigate?: (view: NavView) => void;
+}
+
+export default function Dashboard({ onNavigate }: DashboardProps = {}) {
   const game = useGameState();
   const [openChapterId, setOpenChapterId] = useState<string | null>(null);
   const [openLessonId, setOpenLessonId] = useState<string | null>(null);
@@ -86,7 +90,7 @@ export default function Dashboard() {
         <ResetFooter resetAll={game.resetAll} />
       </main>
 
-      <BottomNav />
+      <BottomNav active="home" onNavigate={onNavigate} />
 
       <AnimatePresence>
         {openChapter && !openLesson && (
