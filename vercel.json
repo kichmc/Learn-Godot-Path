@@ -1,0 +1,10 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "vite",
+  "installCommand": "pnpm install",
+  "buildCommand": "PORT=5000 BASE_PATH=/ pnpm --filter @workspace/gdscript-quest run build",
+  "outputDirectory": "artifacts/gdscript-quest/dist/public",
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}
