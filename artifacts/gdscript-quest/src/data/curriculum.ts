@@ -1,0 +1,1385 @@
+// Curriculum: Chapters → Lessons → Steps
+// Beginner-friendly, mobile-first, very short explanations.
+
+export type StepType =
+  | "text"
+  | "quiz"
+  | "input"
+  | "visual"
+  | "debug"
+  | "prediction"
+  | "test"
+  | "script_explain";
+
+export interface BaseStep {
+  id: string;
+  type: StepType;
+}
+
+export interface TextStep extends BaseStep {
+  type: "text";
+  title?: string;
+  body: string; // 2-3 lines max
+  code?: string; // optional GDScript snippet
+}
+
+export interface QuizStep extends BaseStep {
+  type: "quiz";
+  question: string;
+  options: string[];
+  correctIndex: number;
+  explanation?: string;
+}
+
+export interface InputStep extends BaseStep {
+  type: "input";
+  prompt: string;
+  // Code template with one or more "___" placeholders
+  template: string;
+  // The accepted answers, one per blank, lowercased trim-compared
+  answers: string[];
+  hint?: string;
+  explanation?: string;
+}
+
+export interface DebugStep extends BaseStep {
+  type: "debug";
+  prompt: string;
+  // Each line is presented as a tappable row; the user must pick the buggy line
+  lines: string[];
+  buggyLineIndex: number;
+  fix: string; // the corrected line shown after success
+  explanation?: string;
+}
+
+export interface PredictionStep extends BaseStep {
+  type: "prediction";
+  prompt: string;
+  code: string;
+  options: string[];
+  correctIndex: number;
+  explanation?: string;
+}
+
+// --- Visual simulation step ---
+
+export type SimulationKind =
+  | "move"
+  | "jump"
+  | "gravity"
+  | "signal"
+  | "input"
+  | "collision"
+  | "score"
+  | "chase";
+
+export interface SimulationSpec {
+  kind: SimulationKind;
+  // Generic params; consumed by VisualSimulation
+  direction?: "left" | "right" | "up" | "down";
+  fromKey?: string; // input simulation
+  fromValue?: number; // score
+  toValue?: number; // score
+  caption?: string;
+}
+
+export interface VisualStep extends BaseStep {
+  type: "visual";
+  title: string;
+  description: string; // short
+  code?: string;
+  simulation: SimulationSpec;
+}
+
+export interface ScriptExplainStep extends BaseStep {
+  type: "script_explain";
+  title?: string;
+  intro?: string; // 1 line above the code
+  code: { line: string; explanation: string }[];
+}
+
+export interface TestStep extends BaseStep {
+  type: "test";
+  question: string;
+  // Code template containing one or more "___" blanks
+  code: string;
+  // Accepted answers, one per blank (case-insensitive, trimmed)
+  answers: string[];
+  // 1-2 line explanation shown after a correct answer
+  explanation: string;
+  // Optional visual result that plays after the user gets it right
+  simulation?: SimulationSpec;
+  difficulty?: "easy" | "medium";
+  hint?: string;
+}
+
+export type Step =
+  | TextStep
+  | QuizStep
+  | InputStep
+  | VisualStep
+  | DebugStep
+  | PredictionStep
+  | TestStep
+  | ScriptExplainStep;
+
+export interface Lesson {
+  id: string;
+  title: string;
+  subtitle: string;
+  steps: Step[];
+}
+
+export interface Chapter {
+  id: string;
+  title: string;
+  description: string;
+  accent: string; // tailwind class for color flavor (kept for compatibility)
+  lessons: Lesson[];
+}
+
+// =====================================================================
+// CONTENT
+// =====================================================================
+
+export const curriculum: Chapter[] = [
+  // -------------------------------------------------------------------
+  // CHAPTER 1: BASICS
+  // -------------------------------------------------------------------
+  {
+    id: "basics",
+    title: "Basics",
+    description: "Variables, functions, and print()",
+    accent: "from-primary to-accent",
+    lessons: [
+      {
+        id: "basics-variables",
+        title: "Variables",
+        subtitle: "Boxes that hold values",
+        steps: [
+          {
+            id: "b1-1",
+            type: "text",
+            title: "What is a variable?",
+            body: "A variable is a labeled box that stores a value you can use later.",
+          },
+          {
+            id: "b1-2",
+            type: "text",
+            title: "How to make one",
+            body: "Use the keyword var, a name, and a value.",
+            code: `var score = 0`,
+          },
+          {
+            id: "b1-3",
+            type: "quiz",
+            question: "Which line creates a variable?",
+            options: [`print("hi")`, `var lives = 3`, `func jump():`],
+            correctIndex: 1,
+            explanation: "var starts a variable. The name is lives, value is 3.",
+          },
+          {
+            id: "b1-4",
+            type: "input",
+            prompt: "Make a variable named coins set to 100.",
+            template: `var ___ = 100`,
+            answers: ["coins"],
+            hint: "Type the variable name.",
+          },
+          {
+            id: "b1-5",
+            type: "debug",
+            prompt: "One line is broken. Tap it.",
+            lines: [`var name = "Adwaith"`, `var = 5`, `var hp = 10`],
+            buggyLineIndex: 1,
+            fix: `var x = 5`,
+            explanation: "A variable needs a name between var and =.",
+          },
+          {
+            id: "b1-6",
+            type: "prediction",
+            prompt: "What gets printed?",
+            code: `var lives = 3\nprint(lives)`,
+            options: ["lives", "3", "0", "nothing"],
+            correctIndex: 1,
+            explanation: "print(lives) shows the value stored in lives.",
+          },
+          {
+            id: "b1-test",
+            type: "test",
+            difficulty: "easy",
+            question: "Lesson Test: create a variable named score with value 0.",
+            code: `var score = ___`,
+            answers: ["0"],
+            explanation: "var creates the box, the name labels it, and the number is the starting value.",
+          },
+        ],
+      },
+      {
+        id: "basics-functions",
+        title: "Functions",
+        subtitle: "Reusable blocks of code",
+        steps: [
+          {
+            id: "b2-1",
+            type: "text",
+            title: "What is a function?",
+            body: "A function is a recipe you can run again and again.",
+          },
+          {
+            id: "b2-2",
+            type: "text",
+            title: "Make one with func",
+            body: "Use func, a name, parentheses, then a colon.",
+            code: `func say_hi():\n    print("Hi!")`,
+          },
+          {
+            id: "b2-3",
+            type: "quiz",
+            question: "Which keyword starts a function?",
+            options: ["var", "func", "def", "fn"],
+            correctIndex: 1,
+            explanation: "GDScript uses func.",
+          },
+          {
+            id: "b2-4",
+            type: "input",
+            prompt: "Start a function called jump.",
+            template: `___ jump():`,
+            answers: ["func"],
+          },
+          {
+            id: "b2-5",
+            type: "debug",
+            prompt: "Find the broken line.",
+            lines: [`func start():`, `func jump:`, `func end():`],
+            buggyLineIndex: 1,
+            fix: `func jump():`,
+            explanation: "Functions need () before the colon.",
+          },
+          {
+            id: "b2-test",
+            type: "test",
+            difficulty: "easy",
+            question: "Lesson Test: write a function called jump.",
+            code: `func ___():\n    velocity.y = -300`,
+            answers: ["jump"],
+            explanation: "func + name + () + : begins any function in GDScript.",
+          },
+        ],
+      },
+      {
+        id: "basics-print",
+        title: "print()",
+        subtitle: "Show messages on screen",
+        steps: [
+          {
+            id: "b3-1",
+            type: "text",
+            title: "What does print do?",
+            body: "print() shows a message in the console. Great for testing.",
+            code: `print("Hello, Godot!")`,
+          },
+          {
+            id: "b3-walk",
+            type: "script_explain",
+            title: "Read this script line by line",
+            intro: "Tap each line to see what it does.",
+            code: [
+              {
+                line: "extends CharacterBody2D",
+                explanation:
+                  "Tells Godot this script controls a CharacterBody2D node — a movable character.",
+              },
+              {
+                line: "func _ready():",
+                explanation:
+                  "_ready() runs once, the moment the scene appears.",
+              },
+              {
+                line: '    print("Hello")',
+                explanation:
+                  'Prints the word "Hello" to the Output console for you to see.',
+              },
+            ],
+          },
+          {
+            id: "b3-2",
+            type: "prediction",
+            prompt: "What is the output?",
+            code: `print(2 + 3)`,
+            options: ["2 + 3", "5", "23", "error"],
+            correctIndex: 1,
+            explanation: "GDScript adds first, then prints 5.",
+          },
+          {
+            id: "b3-3",
+            type: "input",
+            prompt: 'Print the message "Game start".',
+            template: `print(___)`,
+            answers: [`"game start"`],
+            hint: 'Use double quotes around the text.',
+          },
+          {
+            id: "b3-4",
+            type: "quiz",
+            question: "Which is correct?",
+            options: [`Print("hi")`, `print("hi")`, `PRINT("hi")`],
+            correctIndex: 1,
+            explanation: "GDScript is case-sensitive. Use lowercase print.",
+          },
+          {
+            id: "b3-test",
+            type: "test",
+            difficulty: "easy",
+            question: 'Lesson Test: print the message "Hello".',
+            code: `print("___")`,
+            answers: ["Hello"],
+            explanation: "Whatever sits inside the quotes is what shows up in the console.",
+          },
+        ],
+      },
+    ],
+  },
+
+  // -------------------------------------------------------------------
+  // CHAPTER 2: MOVEMENT
+  // -------------------------------------------------------------------
+  {
+    id: "movement",
+    title: "Movement",
+    description: "Velocity, slide, and direction",
+    accent: "from-accent to-primary",
+    lessons: [
+      {
+        id: "movement-velocity",
+        title: "Velocity",
+        subtitle: "How fast and where",
+        steps: [
+          {
+            id: "m1-1",
+            type: "text",
+            title: "Velocity is a Vector2",
+            body: "It tells the player two things: speed on X and speed on Y.",
+            code: `velocity = Vector2(100, 0)`,
+          },
+          {
+            id: "m1-walk",
+            type: "script_explain",
+            title: "Read this movement script",
+            intro: "Tap each line — see how a player walks right.",
+            code: [
+              {
+                line: "extends CharacterBody2D",
+                explanation:
+                  "Says this script controls a moving 2D body Godot already knows how to slide.",
+              },
+              {
+                line: "func _physics_process(delta):",
+                explanation:
+                  "Runs every physics frame — perfect for movement.",
+              },
+              {
+                line: "    velocity = Vector2(100, 0)",
+                explanation:
+                  "Sets velocity to 100 px/sec on X (right) and 0 on Y.",
+              },
+              {
+                line: "    move_and_slide()",
+                explanation:
+                  "Actually moves the body using velocity and handles collisions.",
+              },
+            ],
+          },
+          {
+            id: "m1-2",
+            type: "visual",
+            title: "Watch it move",
+            description: "Vector2(100, 0) moves the player to the right.",
+            code: `velocity = Vector2(100, 0)`,
+            simulation: {
+              kind: "move",
+              direction: "right",
+              caption: "Player moves right",
+            },
+          },
+          {
+            id: "m1-3",
+            type: "quiz",
+            question: "Vector2(100, 0) moves the player which way?",
+            options: ["Up", "Right", "Down", "Left"],
+            correctIndex: 1,
+          },
+          {
+            id: "m1-4",
+            type: "prediction",
+            prompt: "Where does this player go?",
+            code: `velocity = Vector2(-100, 0)`,
+            options: ["Right", "Left", "Up", "Down"],
+            correctIndex: 1,
+            explanation: "Negative X means moving left.",
+          },
+          {
+            id: "m1-5",
+            type: "input",
+            prompt: "Make the player move down at speed 100.",
+            template: `velocity = Vector2(0, ___)`,
+            answers: ["100"],
+            hint: "Positive Y = down in 2D.",
+          },
+          {
+            id: "m1-test",
+            type: "test",
+            difficulty: "easy",
+            question: "Lesson Test: complete the code so the player moves right.",
+            code: `velocity.x = ___`,
+            answers: ["200"],
+            explanation: "A positive number on X moves right. Bigger number = faster.",
+            simulation: { kind: "move", direction: "right", caption: "Player moves right" },
+          },
+        ],
+      },
+      {
+        id: "movement-slide",
+        title: "move_and_slide()",
+        subtitle: "Apply the velocity",
+        steps: [
+          {
+            id: "m2-1",
+            type: "text",
+            title: "What it does",
+            body: "Call this every frame. It moves the player and slides along walls.",
+            code: `func _physics_process(delta):\n    move_and_slide()`,
+          },
+          {
+            id: "m2-2",
+            type: "visual",
+            title: "Slide in action",
+            description: "The body uses velocity and slides along the floor.",
+            simulation: {
+              kind: "move",
+              direction: "right",
+              caption: "Sliding to the right",
+            },
+          },
+          {
+            id: "m2-3",
+            type: "input",
+            prompt: "Complete the call.",
+            template: `move_and_____()`,
+            answers: ["slide"],
+          },
+          {
+            id: "m2-4",
+            type: "debug",
+            prompt: "Which line is wrong?",
+            lines: [`velocity.x = 100`, `move_and_slide`, `pass`],
+            buggyLineIndex: 1,
+            fix: `move_and_slide()`,
+            explanation: "Functions need parentheses to actually run.",
+          },
+          {
+            id: "m2-test",
+            type: "test",
+            difficulty: "easy",
+            question: "Lesson Test: complete the call that applies velocity.",
+            code: `move_and_____()`,
+            answers: ["slide"],
+            explanation: "move_and_slide() reads velocity, moves the body, and slides along walls.",
+            simulation: { kind: "move", direction: "right", caption: "Sliding to the right" },
+          },
+        ],
+      },
+      {
+        id: "movement-direction",
+        title: "Direction",
+        subtitle: "Read the axes",
+        steps: [
+          {
+            id: "m3-1",
+            type: "text",
+            title: "X and Y in 2D",
+            body: "Positive X is right. Negative X is left. Positive Y is DOWN.",
+          },
+          {
+            id: "m3-2",
+            type: "visual",
+            title: "Up means negative Y",
+            description: "In Godot 2D, up is negative on the Y axis.",
+            code: `velocity = Vector2(0, -100)`,
+            simulation: {
+              kind: "move",
+              direction: "up",
+              caption: "Player moves up",
+            },
+          },
+          {
+            id: "m3-3",
+            type: "quiz",
+            question: "Which Vector2 moves a player UP?",
+            options: [
+              "Vector2(0, 100)",
+              "Vector2(0, -100)",
+              "Vector2(100, 0)",
+              "Vector2(-100, 0)",
+            ],
+            correctIndex: 1,
+          },
+          {
+            id: "m3-4",
+            type: "prediction",
+            prompt: "Where does this go?",
+            code: `velocity = Vector2(0, 100)`,
+            options: ["Up", "Down", "Left", "Right"],
+            correctIndex: 1,
+          },
+          {
+            id: "m3-test",
+            type: "test",
+            difficulty: "medium",
+            question: "Lesson Test: write a velocity that moves the player UP at speed 100.",
+            code: `velocity = Vector2(0, ___)`,
+            answers: ["-100"],
+            explanation: "Up in 2D is the negative Y direction, so use -100.",
+            simulation: { kind: "move", direction: "up", caption: "Player moves up" },
+            hint: "Up = negative Y.",
+          },
+        ],
+      },
+    ],
+  },
+
+  // -------------------------------------------------------------------
+  // CHAPTER 3: PHYSICS
+  // -------------------------------------------------------------------
+  {
+    id: "physics",
+    title: "Physics",
+    description: "Gravity, jump, is_on_floor()",
+    accent: "from-primary to-warning",
+    lessons: [
+      {
+        id: "physics-gravity",
+        title: "Gravity",
+        subtitle: "What goes up...",
+        steps: [
+          {
+            id: "p1-1",
+            type: "text",
+            title: "Gravity pulls down",
+            body: "Add gravity to velocity.y every frame so the player falls.",
+            code: `velocity.y += gravity * delta`,
+          },
+          {
+            id: "p1-2",
+            type: "visual",
+            title: "Falling object",
+            description: "Without a floor, gravity makes the body fall.",
+            simulation: {
+              kind: "gravity",
+              caption: "Pulled by gravity",
+            },
+          },
+          {
+            id: "p1-3",
+            type: "quiz",
+            question: "Gravity affects which axis?",
+            options: ["X", "Y", "Z", "Both"],
+            correctIndex: 1,
+            explanation: "In 2D, gravity changes Y.",
+          },
+          {
+            id: "p1-4",
+            type: "prediction",
+            prompt: "With gravity on, where does the player go?",
+            code: `velocity.y += gravity * delta`,
+            options: ["Up", "Right", "Down", "Stays still"],
+            correctIndex: 2,
+          },
+          {
+            id: "p1-test",
+            type: "test",
+            difficulty: "medium",
+            question: "Lesson Test: complete the gravity line so the player falls.",
+            code: `velocity.y += ___ * delta`,
+            answers: ["gravity"],
+            explanation: "gravity is a number you defined; multiplying by delta keeps it framerate-safe.",
+            simulation: { kind: "gravity", caption: "Pulled by gravity" },
+          },
+        ],
+      },
+      {
+        id: "physics-jump",
+        title: "Jump",
+        subtitle: "Push up to jump",
+        steps: [
+          {
+            id: "p2-1",
+            type: "text",
+            title: "Set Y to negative",
+            body: "Up is negative Y. Set velocity.y to a negative number to jump.",
+            code: `velocity.y = -300`,
+          },
+          {
+            id: "p2-2",
+            type: "visual",
+            title: "Jumping",
+            description: "A negative Y velocity launches the player upward.",
+            simulation: {
+              kind: "jump",
+              caption: "Jump!",
+            },
+          },
+          {
+            id: "p2-3",
+            type: "input",
+            prompt: "Make the player jump (push up).",
+            template: `velocity.y = ___300`,
+            answers: ["-"],
+            hint: "Up is negative.",
+          },
+          {
+            id: "p2-4",
+            type: "debug",
+            prompt: "This jump is wrong. Which line?",
+            lines: [
+              `func jump():`,
+              `    velocity.y = 300`,
+              `    move_and_slide()`,
+            ],
+            buggyLineIndex: 1,
+            fix: `    velocity.y = -300`,
+            explanation: "Positive Y goes DOWN. Use a negative value to jump.",
+          },
+          {
+            id: "p2-test",
+            type: "test",
+            difficulty: "medium",
+            question: "Lesson Test: make the player jump (push up).",
+            code: `velocity.y = ___`,
+            answers: ["-300"],
+            explanation: "Setting Y to a negative number launches the body upward.",
+            simulation: { kind: "jump", caption: "Jump!" },
+            hint: "Up is negative Y.",
+          },
+        ],
+      },
+      {
+        id: "physics-floor",
+        title: "is_on_floor()",
+        subtitle: "Only jump when grounded",
+        steps: [
+          {
+            id: "p3-1",
+            type: "text",
+            title: "Check the ground",
+            body: "is_on_floor() returns true when the body touches the floor.",
+            code: `if is_on_floor():\n    velocity.y = -300`,
+          },
+          {
+            id: "p3-2",
+            type: "quiz",
+            question: "When can the player jump?",
+            options: ["Anytime", "Only on the floor", "Only in the air"],
+            correctIndex: 1,
+            explanation: "Checking is_on_floor() prevents mid-air jumps.",
+          },
+          {
+            id: "p3-3",
+            type: "visual",
+            title: "Grounded jump",
+            description: "Player only jumps when standing on the floor.",
+            code: `if is_on_floor():\n    velocity.y = -300`,
+            simulation: { kind: "jump", caption: "Floor check, then jump" },
+          },
+          {
+            id: "p3-4",
+            type: "input",
+            prompt: "Complete the floor check.",
+            template: `if ___():\n    velocity.y = -300`,
+            answers: ["is_on_floor"],
+          },
+          {
+            id: "p3-test",
+            type: "test",
+            difficulty: "medium",
+            question: "Lesson Test: only jump when standing on the floor.",
+            code: `if ___():\n    velocity.y = -300`,
+            answers: ["is_on_floor"],
+            explanation: "is_on_floor() returns true when the body touches the ground.",
+            simulation: { kind: "jump", caption: "Floor check, then jump" },
+          },
+        ],
+      },
+    ],
+  },
+
+  // -------------------------------------------------------------------
+  // CHAPTER 4: INPUT
+  // -------------------------------------------------------------------
+  {
+    id: "input",
+    title: "Input",
+    description: "Keyboard and touch",
+    accent: "from-accent to-success",
+    lessons: [
+      {
+        id: "input-keyboard",
+        title: "Keyboard",
+        subtitle: "Read key presses",
+        steps: [
+          {
+            id: "i1-1",
+            type: "text",
+            title: "Input actions",
+            body: "Godot uses named actions like ui_right. Check them with Input.",
+            code: `if Input.is_action_pressed("ui_right"):\n    velocity.x = 100`,
+          },
+          {
+            id: "i1-2",
+            type: "visual",
+            title: "Press right arrow",
+            description: "Pressing right makes the player move right.",
+            simulation: {
+              kind: "input",
+              fromKey: "→",
+              direction: "right",
+              caption: "Right arrow → move right",
+            },
+          },
+          {
+            id: "i1-3",
+            type: "quiz",
+            question: "Which line reads input?",
+            options: [
+              `Input.is_action_pressed("ui_right")`,
+              `Print.is_action("ui_right")`,
+              `Read.action("ui_right")`,
+            ],
+            correctIndex: 0,
+          },
+          {
+            id: "i1-4",
+            type: "input",
+            prompt: "Check if the jump action is pressed.",
+            template: `Input.is_action_____("jump")`,
+            answers: ["pressed"],
+            hint: "Method is is_action_pressed.",
+          },
+          {
+            id: "i1-5",
+            type: "prediction",
+            prompt: "What happens when the player taps left arrow?",
+            code: `if Input.is_action_pressed("ui_left"):\n    velocity.x = -100`,
+            options: ["Move left", "Move right", "Jump", "Nothing"],
+            correctIndex: 0,
+          },
+          {
+            id: "i1-test",
+            type: "test",
+            difficulty: "medium",
+            question: "Lesson Test: check the right-arrow action.",
+            code: `if Input.is_action_pressed("___"):\n    velocity.x = 200`,
+            answers: ["ui_right"],
+            explanation: "ui_right is Godot's default action name for the right arrow key.",
+            simulation: { kind: "input", fromKey: "→", direction: "right", caption: "Right arrow → move right" },
+          },
+        ],
+      },
+      {
+        id: "input-touch",
+        title: "Touch",
+        subtitle: "Mobile-friendly input",
+        steps: [
+          {
+            id: "i2-1",
+            type: "text",
+            title: "Touch is just an action",
+            body: "Map a touch button to an action like tap. Then check it like a key.",
+            code: `if Input.is_action_just_pressed("tap"):\n    jump()`,
+          },
+          {
+            id: "i2-2",
+            type: "visual",
+            title: "Tap to jump",
+            description: "A screen tap triggers the jump action.",
+            simulation: {
+              kind: "input",
+              fromKey: "TAP",
+              direction: "up",
+              caption: "Tap → jump",
+            },
+          },
+          {
+            id: "i2-3",
+            type: "quiz",
+            question: "Which is best for phones?",
+            options: ["Keyboard only", "Touch input", "Mouse drag"],
+            correctIndex: 1,
+          },
+          {
+            id: "i2-4",
+            type: "input",
+            prompt: "Detect a single tap (just pressed).",
+            template: `Input.is_action____pressed("tap")`,
+            answers: ["_just_"],
+            hint: "Pattern: is_action_just_pressed",
+          },
+          {
+            id: "i2-test",
+            type: "test",
+            difficulty: "medium",
+            question: "Lesson Test: detect a single tap action named tap.",
+            code: `if Input.is_action_just_pressed("___"):\n    jump()`,
+            answers: ["tap"],
+            explanation: "is_action_just_pressed fires only on the frame the tap starts.",
+            simulation: { kind: "input", fromKey: "TAP", direction: "up", caption: "Tap → jump" },
+          },
+        ],
+      },
+    ],
+  },
+  // -------------------------------------------------------------------
+  // PROJECT: BEGINNER MOVING PLAYER
+  // -------------------------------------------------------------------
+  {
+    id: "project-moving-player",
+    title: "Beginner Project: Moving Player",
+    description: "Build a controllable 2D character from scratch.",
+    accent: "from-success to-warning",
+    lessons: [
+      {
+        id: "moving-player",
+        title: "Build a Moving Player",
+        subtitle: "Your first real Godot mini-build",
+        steps: [
+          // -------- PROJECT OVERVIEW --------
+          {
+            id: "pmp-overview",
+            type: "text",
+            title: "Project Overview",
+            body: "Today you'll build a 2D character that moves left and right, falls with gravity, and slides along the ground. This is the foundation of every platformer ever made.",
+          },
+          {
+            id: "pmp-final",
+            type: "text",
+            title: "Final Result",
+            body: "A controllable square that responds to arrow keys and obeys gravity. By the end you'll have a complete, working player script.",
+            code: `# Goal:
+# - CharacterBody2D player node
+# - Arrow keys move left and right
+# - Gravity always pulls down
+# - move_and_slide() handles collisions`,
+          },
+
+          // -------- STEP 1: CREATE CHARACTERBODY2D --------
+          {
+            id: "pmp-s1-intro",
+            type: "text",
+            title: "Step 1 · Create the Player",
+            body: "In your scene, add a CharacterBody2D node. It comes with built-in physics helpers like velocity and is_on_floor().",
+            code: `# Scene tree
+# Player (CharacterBody2D)
+#   ├─ CollisionShape2D
+#   └─ Sprite2D`,
+          },
+          {
+            id: "pmp-s1-quiz",
+            type: "quiz",
+            question: "Common mistake: why pick CharacterBody2D, not Node2D?",
+            options: [
+              "It looks cooler in the editor",
+              "It has built-in physics and collision helpers",
+              "Node2D cannot have a script",
+              "It runs faster than other nodes",
+            ],
+            correctIndex: 1,
+            explanation: "CharacterBody2D gives you velocity, move_and_slide(), and is_on_floor() out of the box.",
+          },
+
+          // -------- STEP 2: MOVEMENT SCRIPT --------
+          {
+            id: "pmp-s2-intro",
+            type: "text",
+            title: "Step 2 · Movement Script",
+            body: "Attach a script to the Player. We'll set a speed and apply velocity every physics frame.",
+            code: `extends CharacterBody2D
+
+const SPEED = 200.0
+
+func _physics_process(delta):
+    velocity.x = SPEED
+    move_and_slide()`,
+          },
+          {
+            id: "pmp-s2-walk",
+            type: "script_explain",
+            title: "Read the Script",
+            intro: "Tap each line to learn what it does.",
+            code: [
+              { line: "extends CharacterBody2D", explanation: "This script controls a CharacterBody2D node." },
+              { line: "const SPEED = 200.0", explanation: "How fast the player moves in pixels per second." },
+              { line: "func _physics_process(delta):", explanation: "Runs every physics frame — the right place for movement." },
+              { line: "    velocity.x = SPEED", explanation: "Set horizontal speed. Positive numbers move right." },
+              { line: "    move_and_slide()", explanation: "Apply the velocity and slide along walls and floors." },
+            ],
+          },
+          {
+            id: "pmp-s2-task",
+            type: "input",
+            prompt: "Quick task: finish the script so the player actually moves.",
+            template: `func _physics_process(delta):\n    velocity.x = SPEED\n    ___()`,
+            answers: ["move_and_slide"],
+            hint: "It's the function that uses velocity.",
+            explanation: "move_and_slide() is what applies velocity to the body each frame.",
+          },
+          {
+            id: "pmp-s2-visual",
+            type: "visual",
+            title: "Expected Result",
+            description: "The player slides to the right at a constant speed.",
+            simulation: { kind: "move", direction: "right", caption: "velocity.x = 200, sliding right" },
+          },
+
+          // -------- STEP 3: HANDLE INPUT --------
+          {
+            id: "pmp-s3-intro",
+            type: "text",
+            title: "Step 3 · Handle Input",
+            body: "Right now the player slides forever. Let's read the arrow keys and move only when the user presses one.",
+            code: `func _physics_process(delta):
+    var direction = Input.get_axis("ui_left", "ui_right")
+    velocity.x = direction * SPEED
+    move_and_slide()`,
+          },
+          {
+            id: "pmp-s3-walk",
+            type: "script_explain",
+            title: "How get_axis Works",
+            intro: "It returns -1, 0, or +1 based on the keys.",
+            code: [
+              { line: `Input.get_axis("ui_left", "ui_right")`, explanation: "Returns -1 for left, +1 for right, 0 if neither key is held." },
+              { line: "velocity.x = direction * SPEED", explanation: "Gives -200, 0, or +200 — clean and consistent." },
+            ],
+          },
+          {
+            id: "pmp-s3-quiz",
+            type: "quiz",
+            question: "Common mistake: what is direction when no key is pressed?",
+            options: ["-1", "0", "1", "null"],
+            correctIndex: 1,
+            explanation: "0 means no movement, so the player stops on its own. No extra if-statement needed.",
+          },
+
+          // -------- STEP 4: ADD GRAVITY --------
+          {
+            id: "pmp-s4-intro",
+            type: "text",
+            title: "Step 4 · Add Gravity",
+            body: "Without gravity the player floats. Add a constant downward pull every frame, scaled by delta for stable physics.",
+            code: `const GRAVITY = 900.0
+
+func _physics_process(delta):
+    velocity.y += GRAVITY * delta
+    var direction = Input.get_axis("ui_left", "ui_right")
+    velocity.x = direction * SPEED
+    move_and_slide()`,
+          },
+          {
+            id: "pmp-s4-predict",
+            type: "prediction",
+            prompt: "Common mistake: what happens if you drop the * delta?",
+            code: `velocity.y += GRAVITY   # missing delta!`,
+            options: [
+              "Nothing changes — looks the same",
+              "Gravity feels different on different framerates",
+              "Godot crashes immediately",
+              "The player flies upward",
+            ],
+            correctIndex: 1,
+            explanation: "Multiplying by delta keeps physics consistent no matter the FPS.",
+          },
+          {
+            id: "pmp-s4-visual",
+            type: "visual",
+            title: "Expected Result",
+            description: "velocity.y grows each frame, so the player accelerates downward.",
+            simulation: { kind: "gravity", caption: "Falling under gravity" },
+          },
+
+          // -------- STEP 5: TEST EVERYTHING --------
+          {
+            id: "pmp-s5-test",
+            type: "test",
+            difficulty: "medium",
+            question: "Project Test: fill in the missing constants to complete the full player script.",
+            code: `extends CharacterBody2D\n\nconst SPEED = 200.0\nconst GRAVITY = 900.0\n\nfunc _physics_process(delta):\n    velocity.y += ___ * delta\n    var direction = Input.get_axis("ui_left", "ui_right")\n    velocity.x = direction * ___\n    move_and_slide()`,
+            answers: ["GRAVITY", "SPEED"],
+            explanation: "That's a complete, working 2D player. GRAVITY pulls down, SPEED scales the input.",
+            simulation: { kind: "move", direction: "right", caption: "Your player is alive" },
+          },
+
+          // -------- PROJECT COMPLETE --------
+          {
+            id: "pmp-complete",
+            type: "text",
+            title: "Project Complete",
+            body: "You built a real, controllable 2D player from scratch. The same pattern powers every platformer — Mario, Celeste, Hollow Knight, all of them.",
+            code: `# What you learned
+# - CharacterBody2D for player nodes
+# - velocity + move_and_slide() loop
+# - Input.get_axis() for clean controls
+# - Gravity with delta for stable physics
+
+# Suggested next step:
+# Add jumping with is_on_floor()
+# (see Chapter: Physics)`,
+          },
+        ],
+      },
+    ],
+  },
+
+  // -------------------------------------------------------------------
+  // CHAPTER 5: SIGNALS
+  // -------------------------------------------------------------------
+  {
+    id: "signals",
+    title: "Signals",
+    description: "Nodes talking to nodes",
+    accent: "from-primary to-accent",
+    lessons: [
+      {
+        id: "signals-what",
+        title: "What is a Signal?",
+        subtitle: "Messages between nodes",
+        steps: [
+          {
+            id: "s1-1",
+            type: "text",
+            title: "A signal is a message",
+            body: "One node shouts an event. Other nodes listen and react.",
+          },
+          {
+            id: "s1-2",
+            type: "visual",
+            title: "Button → Player",
+            description: "The button sends a signal. The player listens.",
+            simulation: {
+              kind: "signal",
+              caption: "Signal travels from button to player",
+            },
+          },
+          {
+            id: "s1-3",
+            type: "quiz",
+            question: "Signals are most like…",
+            options: ["Variables", "Messages", "Loops", "Files"],
+            correctIndex: 1,
+          },
+          {
+            id: "s1-test",
+            type: "test",
+            difficulty: "medium",
+            question: "Lesson Test: declare a custom signal called player_died.",
+            code: `___ player_died`,
+            answers: ["signal"],
+            explanation: "The signal keyword defines a new event other nodes can listen for.",
+            simulation: { kind: "signal", caption: "Signal travels from node to node" },
+          },
+        ],
+      },
+      {
+        id: "signals-connect",
+        title: "Connect Signals",
+        subtitle: "Wire them in code",
+        steps: [
+          {
+            id: "s2-1",
+            type: "text",
+            title: "Connect with .connect()",
+            body: "Tell the signal which function to call when it fires.",
+            code: `button.pressed.connect(on_pressed)`,
+          },
+          {
+            id: "s2-2",
+            type: "input",
+            prompt: "Connect the pressed signal.",
+            template: `button.pressed.___(on_pressed)`,
+            answers: ["connect"],
+          },
+          {
+            id: "s2-3",
+            type: "debug",
+            prompt: "Find the broken line.",
+            lines: [
+              `func _ready():`,
+              `    button.pressed.connect on_pressed`,
+              `    print("ready")`,
+            ],
+            buggyLineIndex: 1,
+            fix: `    button.pressed.connect(on_pressed)`,
+            explanation: "connect needs () with the function inside.",
+          },
+          {
+            id: "s2-4",
+            type: "prediction",
+            prompt: "Button is pressed. What happens?",
+            code: `button.pressed.connect(on_pressed)\n\nfunc on_pressed():\n    print("clicked!")`,
+            options: [
+              `Prints "clicked!"`,
+              "Prints nothing",
+              "Errors out",
+              "Prints the word pressed",
+            ],
+            correctIndex: 0,
+          },
+          {
+            id: "s2-test",
+            type: "test",
+            difficulty: "medium",
+            question: "Lesson Test: connect the pressed signal to on_pressed.",
+            code: `button.pressed.___(on_pressed)`,
+            answers: ["connect"],
+            explanation: ".connect() wires the signal to the function that runs when it fires.",
+            simulation: { kind: "signal", caption: "Press → handler runs" },
+          },
+        ],
+      },
+      {
+        id: "signals-button",
+        title: "Button → Action",
+        subtitle: "Make it do something",
+        steps: [
+          {
+            id: "s3-1",
+            type: "text",
+            title: "The handler runs",
+            body: "When the signal fires, your function runs. Put any code there.",
+            code: `func _on_button_pressed():\n    print("clicked!")`,
+          },
+          {
+            id: "s3-2",
+            type: "visual",
+            title: "Click triggers code",
+            description: "Pressing the button runs the connected function.",
+            simulation: {
+              kind: "signal",
+              caption: "Press → run handler",
+            },
+          },
+          {
+            id: "s3-3",
+            type: "quiz",
+            question: "What runs when the signal fires?",
+            options: [
+              "The connected function",
+              "Every function in the file",
+              "Nothing",
+            ],
+            correctIndex: 0,
+          },
+          {
+            id: "s3-test",
+            type: "test",
+            difficulty: "medium",
+            question: "Lesson Test: print clicked! when the button fires.",
+            code: `func _on_button_pressed():\n    ___("clicked!")`,
+            answers: ["print"],
+            explanation: "Inside the handler, call print() to log a message every time the button is pressed.",
+            simulation: { kind: "signal", caption: "Press → run handler" },
+          },
+        ],
+      },
+    ],
+  },
+
+  // -------------------------------------------------------------------
+  // CHAPTER 6: GAME LOGIC
+  // -------------------------------------------------------------------
+  {
+    id: "game-logic",
+    title: "Game Logic",
+    description: "Score, enemies, collisions",
+    accent: "from-warning to-primary",
+    lessons: [
+      {
+        id: "logic-score",
+        title: "Score System",
+        subtitle: "Count the points",
+        steps: [
+          {
+            id: "g1-1",
+            type: "text",
+            title: "Track a score",
+            body: "Use a variable. Add to it when the player earns points.",
+            code: `var score = 0\n\nfunc add_point():\n    score += 1`,
+          },
+          {
+            id: "g1-2",
+            type: "visual",
+            title: "Score ticks up",
+            description: "Each event adds to the score counter.",
+            simulation: {
+              kind: "score",
+              fromValue: 0,
+              toValue: 5,
+              caption: "Score: 0 → 5",
+            },
+          },
+          {
+            id: "g1-3",
+            type: "input",
+            prompt: "Add one to the score.",
+            template: `score ___ 1`,
+            answers: ["+="],
+            hint: "Shorthand for score = score + 1.",
+          },
+          {
+            id: "g1-4",
+            type: "prediction",
+            prompt: "What does this print?",
+            code: `var score = 5\nscore += 2\nprint(score)`,
+            options: ["5", "7", "2", "score"],
+            correctIndex: 1,
+          },
+          {
+            id: "g1-test",
+            type: "test",
+            difficulty: "medium",
+            question: "Lesson Test: add 1 to the score.",
+            code: `score ___ 1`,
+            answers: ["+="],
+            explanation: "+= is shorthand for score = score + 1.",
+            simulation: { kind: "score", fromValue: 0, toValue: 5, caption: "Score: 0 → 5" },
+          },
+        ],
+      },
+      {
+        id: "logic-enemy",
+        title: "Enemy Behavior",
+        subtitle: "Chase the player",
+        steps: [
+          {
+            id: "g2-1",
+            type: "text",
+            title: "Chase logic",
+            body: "Subtract positions to get a direction. Normalize it. Multiply by speed.",
+            code: `var dir = (player.position - position).normalized()\nvelocity = dir * speed`,
+          },
+          {
+            id: "g2-2",
+            type: "visual",
+            title: "Enemy chases",
+            description: "Enemy moves toward the player every frame.",
+            simulation: {
+              kind: "chase",
+              caption: "Enemy hunts the player",
+            },
+          },
+          {
+            id: "g2-3",
+            type: "quiz",
+            question: "What does .normalized() do to a vector?",
+            options: [
+              "Doubles its length",
+              "Sets its length to 1",
+              "Flips it",
+              "Removes it",
+            ],
+            correctIndex: 1,
+            explanation: "Normalized vectors have length 1, so speed stays steady.",
+          },
+          {
+            id: "g2-test",
+            type: "test",
+            difficulty: "medium",
+            question: "Lesson Test: turn the chase direction into a unit vector.",
+            code: `var dir = (player.position - position).___()`,
+            answers: ["normalized"],
+            explanation: ".normalized() shortens any vector to length 1 so speed stays consistent.",
+            simulation: { kind: "chase", caption: "Enemy hunts the player" },
+          },
+        ],
+      },
+      {
+        id: "logic-collision",
+        title: "Collisions",
+        subtitle: "When bodies touch",
+        steps: [
+          {
+            id: "g3-1",
+            type: "text",
+            title: "Group + check",
+            body: "Add nodes to a group, then check the group on collision.",
+            code: `func _on_body_entered(body):\n    if body.is_in_group("enemy"):\n        die()`,
+          },
+          {
+            id: "g3-2",
+            type: "visual",
+            title: "Player meets enemy",
+            description: "When they touch, the collision handler runs.",
+            simulation: {
+              kind: "collision",
+              caption: "Collision detected",
+            },
+          },
+          {
+            id: "g3-3",
+            type: "quiz",
+            question: "How do we know the body is an enemy?",
+            options: [
+              "Check its color",
+              "Check its group",
+              "Print it",
+              "Guess",
+            ],
+            correctIndex: 1,
+          },
+          {
+            id: "g3-4",
+            type: "input",
+            prompt: "Check if the body is in the enemy group.",
+            template: `if body.is_in_group(___):`,
+            answers: [`"enemy"`],
+            hint: "Use double quotes around the group name.",
+          },
+          {
+            id: "g3-test",
+            type: "test",
+            difficulty: "medium",
+            question: "Lesson Test: detect a touch with the enemy group.",
+            code: `func _on_body_entered(body):\n    if body.is_in_group("___"):\n        die()`,
+            answers: ["enemy"],
+            explanation: "Groups let you tag many nodes (all enemies) and check them with one call.",
+            simulation: { kind: "collision", caption: "Player + enemy collide" },
+          },
+        ],
+      },
+    ],
+  },
+];
+
+// Helpers
+export function findChapter(id: string): Chapter | undefined {
+  return curriculum.find((c) => c.id === id);
+}
+
+export function findLesson(
+  chapterId: string,
+  lessonId: string,
+): Lesson | undefined {
+  return findChapter(chapterId)?.lessons.find((l) => l.id === lessonId);
+}
+
+export function totalLessons(): number {
+  return curriculum.reduce((sum, c) => sum + c.lessons.length, 0);
+}
+
+export function totalSteps(): number {
+  return curriculum.reduce(
+    (sum, c) =>
+      sum + c.lessons.reduce((s, l) => s + l.steps.length, 0),
+    0,
+  );
+}
